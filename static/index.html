@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Double Video Tags for Smooth Transition</title>
+<style>
+    body {
+        background-color: #008000;
+    }
+
+    video {
+        width: 100%;
+        display: none; /* Initially hide both videos */
+    }
+</style>
+</head>
+<body>
+
+<video id="video1" autoplay></video>
+<video id="video2"></video>
+
+<script>
+    let video1 = document.getElementById('video1');
+    let video2 = document.getElementById('video2');
+
+    // 视频播放队列
+    let videoQueue = [];
+    let defaultVideo = './videos/1.mp4';
+    let currentVideo = video1; // 当前播放的视频元素
+    let nextVideo = video2; // 下一个将要播放的视频元素
+
+    // 准备好下一个视频
+    function prepareNextVideo(src) {
+        nextVideo.src = src;
+        nextVideo.load();
+        nextVideo.onloadeddata = function() {
+            // 确保视频加载完成后再切换
+            switchVideos();
+        };
+    }
+
+    // 切换视频
+    function switchVideos() {
+        // 隐藏当前视频，显示下一个视频
+        currentVideo.style.display = 'none';
+        nextVideo.style.display = 'block';
+        nextVideo.play();
+
+        // 交换当前视频和下一个视频的引用
+        [currentVideo, nextVideo] = [nextVideo, currentVideo];
+    }
+
+    // 设置视频结束时的行为
+    video1.onended = video2.onended = function() {
+        if (videoQueue.length > 0) {
+            prepareNextVideo(videoQueue.shift()); // 准备队列中的下一个视频
+        } else {
+            prepareNextVideo(defaultVideo); // 准备默认视频
+        }
+    };
+
+    // WebSocket接收视频路径并添加到队列
+    const ws = new WebSocket('ws://localhost:8091/ws');
+    ws.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        if (data.type === 'show') {
+
+            if(data.insert_index === 0) {
+                videoQueue.unshift(data.video_path); // 将新视频添加到队首
+            } else if(data.insert_index === -1){
+                videoQueue.push(data.video_path); // 将新视频添加到队列
+            } else {
+                videoQueue.splice(data.insert_index, 0, data.video_path);
+            }
+            
+            if (currentVideo.paused || currentVideo.ended) {
+                prepareNextVideo(videoQueue.shift()); // 如果当前没有视频播放，立即准备下一个视频
+            }
+        }
+    };
+
+    // 初始化播放
+    currentVideo.src = defaultVideo; // 初始视频
+    currentVideo.load();
+    currentVideo.play();
+    currentVideo.style.display = 'block'; // 显示当前视频
+</script>
+
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+    "easy_wav2lip": {
+        "video_file": "E:\\GitHub_pro\\digital_human_video_player\\static\\imgs\\1.png",
+        "quality": "Fast",
+        "output_height": "full resolution",
+        "wav2lip_version": "Wav2Lip",
+        "use_previous_tracking_data": "True",
+        "nosmooth": "True",
+        "u": 0,
+        "d": 10,
+        "l": 20,
+        "r": 0,
+        "size": 2.05,
+        "feathering": 5,
+        "mouth_tracking": "True",
+        "debug_mask": "False",
+        "batch_process": "False"
+    }
+}

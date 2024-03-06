@@ -1,3 +1,4 @@
 quart
 selenium
 gradio_client==0.10.1
+colorlog

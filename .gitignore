@@ -154,3 +154,5 @@ cython_debug/
 Miniconda3/
 
 log/*.txt
+
+static/videos/*.mp4

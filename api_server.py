@@ -69,7 +69,7 @@ async def send_to_all_websockets(data):
     for ws in connected_websockets:
         await ws.send(data)
 
-@app.route('/show', methods=['GET'])
+@app.route('/show', methods=['POST'])
 async def show():
     try:
         data = await request.get_json()

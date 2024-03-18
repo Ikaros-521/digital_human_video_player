@@ -1,5 +1,8 @@
 {
+    "server_ip": "127.0.0.1",
+    "server_port": 8091,
     "easy_wav2lip": {
+        "api_ip_port": "http://127.0.0.1:7860",
         "video_file": "E:\\GitHub_pro\\digital_human_video_player\\static\\imgs\\1.png",
         "quality": "Fast",
         "output_height": "full resolution",
@@ -15,5 +18,15 @@
         "mouth_tracking": "True",
         "debug_mask": "False",
         "batch_process": "False"
+    },
+    "sadtalker": {
+        "api_ip_port": "http://127.0.0.1:7860",
+        "img_file": "E:\\GitHub_pro\\digital_human_video_player\\static\\imgs\\1.png",
+        "preprocess": "crop",
+        "still_mode": false,
+        "GFPGAN": false,
+        "batch_size": 2,
+        "face_model_resolution": 256,
+        "pose_style": 0
     }
 }

@@ -65,6 +65,27 @@ def get_video(type: str, audio_path: str):
             logging.info(f'合成成功，生成在：{result["video"]}')
 
             return result["video"]
+        elif type == "genefaceplusplus":
+            client = Client(config.get("genefaceplusplus", "api_ip_port"))
+            result = client.predict(
+                audio_path,	# filepath  in 'Input audio (required)' Audio component
+                config.get("genefaceplusplus", "blink_mode"),	# Literal['none', 'period']  in '眨眼模式' Radio component
+                config.get("genefaceplusplus", "temperature"),	# float (numeric value between 0.0 and 1.0) in 'temperature' Slider component
+                config.get("genefaceplusplus", "lle_percent"),	# float (numeric value between 0.0 and 1.0) in 'lle_percent' Slider component
+                config.get("genefaceplusplus", "mouth_amplitude"),	# float (numeric value between 0.0 and 1.0) in '嘴部幅度' Slider component
+                config.get("genefaceplusplus", "ray_marching_end_threshold"),	# float (numeric value between 0.0 and 0.1) in 'ray marching end-threshold' Slider component
+                config.get("genefaceplusplus", "fp16"),	# bool  in 'fp16模式：是否使用并加速推理' Checkbox component
+                config.get("genefaceplusplus", "audio2secc_model"),	# List[List[str]]  in 'audio2secc model ckpt path or directory' Fileexplorer component
+                config.get("genefaceplusplus", "pose_net_model"),	# List[List[str]]  in '(optional) pose net model ckpt path or directory' Fileexplorer component
+                config.get("genefaceplusplus", "head_model"),	# List[List[str]]  in '(按需) 选择人物头部模型(如果选择了躯干模型，该选项将被忽略)' Fileexplorer component
+                config.get("genefaceplusplus", "body_model"),	# List[List[str]]  in '选择人物躯干模型' Fileexplorer component
+                config.get("genefaceplusplus", "low_memory_mode"),	# bool  in '低内存使用模式：以较低的推理速度为代价节省内存。在运行长音频合成视频时很有用。' Checkbox component
+                api_name="/infer_once_args"
+            )
+
+            logging.info(f'合成成功，生成在：{result[0]["video"]}')
+
+            return result[0]["video"]
     except Exception as e:
         logging.error(traceback.format_exc())
         return None
@@ -107,7 +128,9 @@ async def show():
 
             await send_to_all_websockets(json.dumps({"type": "show", "video_path": file_url}))
 
-        return jsonify({"code": 200, "message": "操作成功"})
+            return jsonify({"code": 200, "message": "操作成功"})
+        
+        return jsonify({"code": 200, "message": "视频合成失败"})
     except Exception as e:
         return jsonify({"code": -1, "message": f"操作失败: {str(e)}"})
 

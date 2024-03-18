@@ -28,5 +28,19 @@
         "batch_size": 2,
         "face_model_resolution": 256,
         "pose_style": 0
+    },
+    "genefaceplusplus": {
+        "api_ip_port": "http://127.0.0.1:7860",
+        "blink_mode": "period",
+        "temperature": 0,
+        "lle_percent": 0,
+        "mouth_amplitude": 0.4,
+        "ray_marching_end_threshold": 0.01,
+        "fp16": false,
+        "audio2secc_model": [["checkpoints", "audio2motion_vae", "model_ckpt_steps_400000.ckpt"]],
+        "pose_net_model": [],
+        "head_model": [],
+        "body_model": [["checkpoints", "motion2video_nerf", "May_torso", "model_ckpt_steps_250000.ckpt"]],
+        "low_memory_mode": false
     }
 }

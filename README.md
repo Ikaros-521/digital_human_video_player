@@ -37,7 +37,7 @@ python：3.10.10
 
 | 参数名        | 类型   | 是否必需  | 描述                 |
 |--------      |--------|----------|--------------        |
-| type         | string | 是       | 使用的视频合成技术类型(easy_wav2lip / sadtalker) |
+| type         | string | 是       | 使用的视频合成技术类型(easy_wav2lip / sadtalker / genefaceplusplus) |
 | audio_path   | string | 是       | 音频文件的绝对路径     |
 | insert_index | int    | 是       | 插入索引值，队尾插入：-1，队首插入：0，其他自定义 |
 

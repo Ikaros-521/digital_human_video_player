@@ -20,12 +20,13 @@
         "batch_process": "False"
     },
     "sadtalker": {
+        "gradio_api_type": "api_name",
         "api_ip_port": "http://127.0.0.1:7860",
-        "img_file": "E:\\GitHub_pro\\digital_human_video_player\\static\\imgs\\1.png",
+        "img_file": "E:\\GitHub_pro\\digital_human_video_player\\static\\imgs\\2.png",
         "preprocess": "crop",
         "still_mode": false,
-        "GFPGAN": false,
-        "batch_size": 2,
+        "GFPGAN": true,
+        "batch_size": 4,
         "face_model_resolution": 256,
         "pose_style": 0
     },

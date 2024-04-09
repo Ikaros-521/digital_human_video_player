@@ -49,14 +49,20 @@ python：3.10.10
 | msg    | string  | 响应消息，描述请求的处理结果 |
 
 # 更新日志
+- v0.1.3
+    - sadtalker新增参数`gradio_api_type`用于适配不同的接口传参（api_name/fn_index）
+    - 补充测试图和视频
 
-- v0.1.0
-    - 初版发布
+- v0.1.2
+    - 对接GeneFacePlusPlus(未测试)
 
 - v0.1.1
     - 对接sadtalker
     - API新增参数type
     - 优化视频播放逻辑，尝试解决视频过渡时的无效等待问题
 
-- v0.1.2
-    - 对接GeneFacePlusPlus(未测试)
+
+- v0.1.0
+    - 初版发布
+
+

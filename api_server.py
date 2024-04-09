@@ -50,17 +50,31 @@ def get_video(type: str, audio_path: str):
             return result[0]["video"]
         elif type == "sadtalker":
             client = Client(config.get("sadtalker", "api_ip_port"))
-            result = client.predict(
-                config.get("sadtalker", "img_file"),	# filepath  in 'Source image' Image component
-                audio_path,	# filepath  in 'Input audio' Audio component
-                config.get("sadtalker", "preprocess"),	# Literal[crop, resize, full, extcrop, extfull]  in 'preprocess' Radio component
-                config.get("sadtalker", "still_mode"),	# bool  in 'Still Mode (fewer head motion, works with preprocess `full`)' Checkbox component
-                config.get("sadtalker", "GFPGAN"),	# bool  in 'GFPGAN as Face enhancer' Checkbox component
-                config.get("sadtalker", "batch_size"),	# float (numeric value between 0 and 10) in 'batch size in generation' Slider component
-                config.get("sadtalker", "face_model_resolution"),	# Literal[256, 512]  in 'face model resolution' Radio component
-                config.get("sadtalker", "pose_style"),	# float (numeric value between 0 and 46) in 'Pose style' Slider component
-                api_name="/test"
-            )
+
+            if config.get("sadtalker", "gradio_api_type") == "api_name":
+                result = client.predict(
+                    config.get("sadtalker", "img_file"),	# filepath  in 'Source image' Image component
+                    audio_path,	# filepath  in 'Input audio' Audio component
+                    config.get("sadtalker", "preprocess"),	# Literal[crop, resize, full, extcrop, extfull]  in 'preprocess' Radio component
+                    config.get("sadtalker", "still_mode"),	# bool  in 'Still Mode (fewer head motion, works with preprocess `full`)' Checkbox component
+                    config.get("sadtalker", "GFPGAN"),	# bool  in 'GFPGAN as Face enhancer' Checkbox component
+                    config.get("sadtalker", "batch_size"),	# float (numeric value between 0 and 10) in 'batch size in generation' Slider component
+                    config.get("sadtalker", "face_model_resolution"),	# Literal[256, 512]  in 'face model resolution' Radio component
+                    config.get("sadtalker", "pose_style"),	# float (numeric value between 0 and 46) in 'Pose style' Slider component
+                    api_name="/test"
+                )
+            else:
+                result = client.predict(
+                    config.get("sadtalker", "img_file"),	# filepath  in 'Source image' Image component
+                    audio_path,	# filepath  in 'Input audio' Audio component
+                    config.get("sadtalker", "preprocess"),	# Literal[crop, resize, full, extcrop, extfull]  in 'preprocess' Radio component
+                    config.get("sadtalker", "still_mode"),	# bool  in 'Still Mode (fewer head motion, works with preprocess `full`)' Checkbox component
+                    config.get("sadtalker", "GFPGAN"),	# bool  in 'GFPGAN as Face enhancer' Checkbox component
+                    config.get("sadtalker", "batch_size"),	# float (numeric value between 0 and 10) in 'batch size in generation' Slider component
+                    config.get("sadtalker", "face_model_resolution"),	# Literal[256, 512]  in 'face model resolution' Radio component
+                    config.get("sadtalker", "pose_style"),	# float (numeric value between 0 and 46) in 'Pose style' Slider component
+                    fn_index=1
+                )
 
             logging.info(f'合成成功，生成在：{result["video"]}')
 

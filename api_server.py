@@ -63,6 +63,10 @@ def get_video(type: str, audio_path: str):
                     config.get("sadtalker", "pose_style"),	# float (numeric value between 0 and 46) in 'Pose style' Slider component
                     api_name="/test"
                 )
+
+                logging.info(f'合成成功，生成在：{result["video"]}')
+
+                return result["video"]
             else:
                 result = client.predict(
                     config.get("sadtalker", "img_file"),	# filepath  in 'Source image' Image component
@@ -76,9 +80,9 @@ def get_video(type: str, audio_path: str):
                     fn_index=1
                 )
 
-            logging.info(f'合成成功，生成在：{result["video"]}')
+                logging.info(f'合成成功，生成在：{result}')
 
-            return result["video"]
+                return result
         elif type == "genefaceplusplus":
             client = Client(config.get("genefaceplusplus", "api_ip_port"))
             result = client.predict(

@@ -13,7 +13,7 @@ from gradio_client import Client
 # 		api_name="/test"
 # )
 
-client = Client("https://u373179-884c-4835511a.westc.gpuhub.com:8443/")
+client = Client("https://--.westc.gpuhub.com:8443/")
 result = client.predict(
 		"C:\\Users\\Administrator\\Pictures\\test\\1.png",	# filepath  in 'Source image' Image component
 		"C:\\Users\\Administrator\\Pictures\\test\\2.mp3",	# filepath  in 'Input audio' Audio component

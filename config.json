@@ -25,8 +25,8 @@
         "img_file": "E:\\GitHub_pro\\digital_human_video_player\\static\\imgs\\2.png",
         "preprocess": "crop",
         "still_mode": false,
-        "GFPGAN": true,
-        "batch_size": 4,
+        "GFPGAN": false,
+        "batch_size": 2,
         "face_model_resolution": 256,
         "pose_style": 0
     },

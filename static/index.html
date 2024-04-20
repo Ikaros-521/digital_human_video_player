@@ -73,6 +73,13 @@
             console.log('播放默认视频');
             prepareNextVideo(defaultVideo); // 没有等待的视频，播放默认视频
         }
+        
+        currentVideoStr = currentVideo.src;
+        if (!currentVideoStr.includes(defaultVideo.substring(1))) {
+            // 当前视频播放完毕后，通过 WebSocket 回传视频路径
+            const message = JSON.stringify({ type: 'videoEnded', video_path: currentVideo.src });
+            ws.send(message);
+        }
     };
 
     // WebSocket接收视频路径并添加到队列

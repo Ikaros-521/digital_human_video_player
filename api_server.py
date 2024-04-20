@@ -121,14 +121,34 @@ async def ws():
     try:
         while True:
             data = await websocket.receive()
-            print(f"Received message from client: {data}")
-            # 在这里添加处理从客户端接收的数据的逻辑
+            data_json = json.loads(data)
+            logging.info(f"收到客户端数据: {data_json}")
+            # 处理从客户端接收的数据的逻辑
+            if data_json['type'] == "videoEnded":
+                # 在这里添加删除视频文件的逻辑
+                await delete_video_file(data_json['video_path'])
     finally:
-        connected_websockets.remove(websocket._get_current_object())
+        connected_websockets.remove(websocket)
+
+
+async def delete_video_file(video_path: str):
+    # 根据你的逻辑来获取要删除的视频文件路径
+    file_name_with_extension = os.path.basename(video_path)
+    relative_path = os.path.join("static/videos", file_name_with_extension)
+    
+    try:
+        os.remove(relative_path)  # 删除视频文件
+        logging.info(f"成功删除视频文件 {relative_path}。")
+    except FileNotFoundError:
+        logging.error(f"未找到视频文件 {relative_path}。")
+    except Exception as e:
+        logging.error(f"删除视频文件时发生错误：{str(e)}")
+
 
 async def send_to_all_websockets(data):
     for ws in connected_websockets:
         await ws.send(data)
+
 
 @app.route('/show', methods=['POST'])
 async def show():

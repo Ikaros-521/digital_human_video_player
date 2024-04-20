@@ -19,7 +19,7 @@ app = Quart(__name__, static_folder='./static')
 connected_websockets = set()
 
 
-def get_video(type: str, audio_path: str):
+def get_video(type: str, data: dict):
     from gradio_client import Client
 
     try:
@@ -27,7 +27,7 @@ def get_video(type: str, audio_path: str):
             client = Client(config.get("easy_wav2lip", "api_ip_port"))
             result = client.predict(
                 config.get("easy_wav2lip", "video_file"),	# filepath  in '支持图片、视频格式' File component
-                audio_path,	# filepath  in '支持mp3、wav格式' Audio component
+                data['audio_path'],	# filepath  in '支持mp3、wav格式' Audio component
                 config.get("easy_wav2lip", "quality"),	# Literal['Fast', 'Improved', 'Enhanced', 'Experimental']  in '视频质量选项' Radio component
                 config.get("easy_wav2lip", "output_height"),	# Literal['full resolution', 'half resolution']  in '分辨率选项' Radio component
                 config.get("easy_wav2lip", "wav2lip_version"),	# Literal['Wav2Lip', 'Wav2Lip_GAN']  in 'Wav2Lip版本选项' Radio component
@@ -54,7 +54,7 @@ def get_video(type: str, audio_path: str):
             if config.get("sadtalker", "gradio_api_type") == "api_name":
                 result = client.predict(
                     config.get("sadtalker", "img_file"),	# filepath  in 'Source image' Image component
-                    audio_path,	# filepath  in 'Input audio' Audio component
+                    data['audio_path'],	# filepath  in 'Input audio' Audio component
                     config.get("sadtalker", "preprocess"),	# Literal[crop, resize, full, extcrop, extfull]  in 'preprocess' Radio component
                     config.get("sadtalker", "still_mode"),	# bool  in 'Still Mode (fewer head motion, works with preprocess `full`)' Checkbox component
                     config.get("sadtalker", "GFPGAN"),	# bool  in 'GFPGAN as Face enhancer' Checkbox component
@@ -70,7 +70,7 @@ def get_video(type: str, audio_path: str):
             else:
                 result = client.predict(
                     config.get("sadtalker", "img_file"),	# filepath  in 'Source image' Image component
-                    audio_path,	# filepath  in 'Input audio' Audio component
+                    data['audio_path'],	# filepath  in 'Input audio' Audio component
                     config.get("sadtalker", "preprocess"),	# Literal[crop, resize, full, extcrop, extfull]  in 'preprocess' Radio component
                     config.get("sadtalker", "still_mode"),	# bool  in 'Still Mode (fewer head motion, works with preprocess `full`)' Checkbox component
                     config.get("sadtalker", "GFPGAN"),	# bool  in 'GFPGAN as Face enhancer' Checkbox component
@@ -86,7 +86,7 @@ def get_video(type: str, audio_path: str):
         elif type == "genefaceplusplus":
             client = Client(config.get("genefaceplusplus", "api_ip_port"))
             result = client.predict(
-                audio_path,	# filepath  in 'Input audio (required)' Audio component
+                data['audio_path'],	# filepath  in 'Input audio (required)' Audio component
                 config.get("genefaceplusplus", "blink_mode"),	# Literal['none', 'period']  in '眨眼模式' Radio component
                 config.get("genefaceplusplus", "temperature"),	# float (numeric value between 0.0 and 1.0) in 'temperature' Slider component
                 config.get("genefaceplusplus", "lle_percent"),	# float (numeric value between 0.0 and 1.0) in 'lle_percent' Slider component
@@ -104,11 +104,11 @@ def get_video(type: str, audio_path: str):
             logging.info(f'合成成功，生成在：{result[0]["video"]}')
 
             return result[0]["video"]
+        elif type == "local":
+            return data['video_path']
     except Exception as e:
         logging.error(traceback.format_exc())
         return None
-
-
 
 
 @app.route('/')
@@ -137,7 +137,7 @@ async def show():
 
         logging.info(f"收到数据：{data}")
 
-        video_path = get_video(data["type"], data["audio_path"])
+        video_path = get_video(data["type"], data)
 
         if video_path:
             common.move_and_rename(video_path, "static/videos")

@@ -37,7 +37,8 @@ python：3.10.10
 
 | 参数名        | 类型   | 是否必需  | 描述                 |
 |--------      |--------|----------|--------------        |
-| type         | string | 是       | 使用的视频合成技术类型(easy_wav2lip / sadtalker / genefaceplusplus) |
+| type         | string | 是       | 使用的视频合成技术类型(easy_wav2lip / sadtalker / genefaceplusplus / local) |
+| video_path   | string | 是       | 视频文件的绝对路径（在local模式下必填）     |
 | audio_path   | string | 是       | 音频文件的绝对路径     |
 | insert_index | int    | 是       | 插入索引值，队尾插入：-1，队首插入：0，其他自定义 |
 
@@ -49,6 +50,9 @@ python：3.10.10
 | msg    | string  | 响应消息，描述请求的处理结果 |
 
 # 更新日志
+- v0.1.4
+    - 支持local类型，可以直接传入本地视频进行播放
+
 - v0.1.3
     - sadtalker新增参数`gradio_api_type`用于适配不同的接口传参（api_name/fn_index）
     - 补充测试图和视频

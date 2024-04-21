@@ -127,6 +127,10 @@ async def ws():
             if data_json['type'] == "videoEnded":
                 # 在这里添加删除视频文件的逻辑
                 await delete_video_file(data_json['video_path'])
+            elif data_json['type'] == "get_default_video":
+                logging.info(f"发送默认配置 视频路径: {config.get('default_video')}")
+                # 在这里添加发送消息到客户端的逻辑
+                await send_to_all_websockets(json.dumps({"type": "set_default_video", "video_path": config.get("default_video")}))
     finally:
         connected_websockets.remove(websocket)
 

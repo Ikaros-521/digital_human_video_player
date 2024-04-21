@@ -25,7 +25,7 @@
 
     // 视频播放队列
     let videoQueue = [];
-    let defaultVideo = './videos/2.mp4'; // 默认视频路径
+    let defaultVideo = './videos/1.mp4'; // 默认视频路径
     let currentVideo = video1; // 当前播放的视频元素
     let nextVideo = video2; // 下一个将要播放的视频元素
     let isWaitingForNextVideo = false; // 是否正在等待下一个视频加载
@@ -84,6 +84,20 @@
 
     // WebSocket接收视频路径并添加到队列
     const ws = new WebSocket('ws://localhost:8091/ws');
+    ws.onopen = function(event) {
+        console.log('WebSocket连接成功！');
+        // 在这里可以发送数据或执行其他操作
+        // 假设data是要发送的JSON数据对象
+        const data = {
+            type: 'get_default_video'
+        };
+
+        // 将JSON对象转换为字符串
+        const jsonData = JSON.stringify(data);
+
+        // 发送JSON数据
+        ws.send(jsonData);
+    };
     ws.onmessage = function(event) {
         const data = JSON.parse(event.data);
         if (data.type === 'show') {
@@ -98,6 +112,8 @@
             if ((currentVideo.paused || currentVideo.ended) && !isWaitingForNextVideo) {
                 prepareNextVideo(videoQueue.shift()); // 如果当前没有视频播放，且没有在等待，则立即准备下一个视频
             }
+        } else if (data.type === 'set_default_video') {
+            defaultVideo = data.video_path;
         }
     };
 

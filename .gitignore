@@ -162,3 +162,7 @@ pkg/
 video_player.py
 
 static/test
+
+output/
+
+static/index copy.html

@@ -1,4 +1,4 @@
-from quart import Quart, websocket, redirect, url_for, jsonify, request  
+from quart import Quart, websocket, redirect, url_for, jsonify, request, send_from_directory 
 import asyncio, threading, time, os
 import json, logging, traceback
 from selenium import webdriver
@@ -14,8 +14,16 @@ file_path = "./log/log-" + common.get_bj_time(1) + ".txt"
 Configure_logger(file_path)
 config = Config("config.json")
 
+# 获取当前脚本的目录
+script_dir = os.path.dirname(os.path.abspath(__file__))
 
-app = Quart(__name__, static_folder='./static')
+# 设置静态文件夹路径为相对于当前脚本目录的路径
+static_folder = os.path.join(script_dir, 'static')
+static_folder = os.path.abspath(static_folder)
+
+print(f"static_folder={static_folder}")
+
+app = Quart(__name__, static_folder=static_folder)
 connected_websockets = set()
 
 
@@ -64,7 +72,7 @@ def get_video(type: str, data: dict):
                     api_name="/test"
                 )
 
-                logging.info(f'合成成功，生成在：{result["video"]}')
+                logging.info(f'{type}合成成功，生成在：{result["video"]}')
 
                 return result["video"]
             else:
@@ -80,7 +88,7 @@ def get_video(type: str, data: dict):
                     fn_index=1
                 )
 
-                logging.info(f'合成成功，生成在：{result}')
+                logging.info(f'{type}合成成功，生成在：{result}')
 
                 return result
         elif type == "genefaceplusplus":
@@ -101,7 +109,22 @@ def get_video(type: str, data: dict):
                 api_name="/infer_once_args"
             )
 
-            logging.info(f'合成成功，生成在：{result[0]["video"]}')
+            logging.info(f'{type}合成成功，生成在：{result[0]["video"]}')
+
+            return result[0]["video"]
+        elif type == "musetalk":
+            # gradio_client-0.16.3
+            from gradio_client import file
+
+            client = Client(config.get("musetalk", "api_ip_port"))
+            result = client.predict(
+                audio_path=file(data['audio_path']),
+                video_path={"video":file(config.get("musetalk", "video_path"))},
+                bbox_shift=int(config.get("musetalk", "bbox_shift")),
+                api_name="/inference"
+            )
+
+            logging.info(f'{type}合成成功，生成在：{result[0]["video"]}')
 
             return result[0]["video"]
         elif type == "local":
@@ -115,30 +138,42 @@ def get_video(type: str, data: dict):
 async def home():
     return redirect(url_for('static', filename='index.html'))
 
+@app.route('/videos/<path:filename>')
+async def load_video(filename):
+    video_path = os.path.join(app.static_folder, 'video', filename)
+    return await send_from_directory(os.path.dirname(video_path), os.path.basename(video_path))
+
+
 @app.websocket('/ws')
 async def ws():
     connected_websockets.add(websocket._get_current_object())
     try:
         while True:
-            data = await websocket.receive()
-            data_json = json.loads(data)
-            logging.info(f"收到客户端数据: {data_json}")
-            # 处理从客户端接收的数据的逻辑
-            if data_json['type'] == "videoEnded":
-                # 在这里添加删除视频文件的逻辑
-                await delete_video_file(data_json['video_path'])
-            elif data_json['type'] == "get_default_video":
-                logging.info(f"发送默认配置 视频路径: {config.get('default_video')}")
-                # 在这里添加发送消息到客户端的逻辑
-                await send_to_all_websockets(json.dumps({"type": "set_default_video", "video_path": config.get("default_video")}))
+            try:
+                data = await websocket.receive()
+                data_json = json.loads(data)
+                logging.info(f"收到客户端数据: {data_json}")
+                # 处理从客户端接收的数据的逻辑
+                if data_json['type'] == "videoEnded":
+                    # 在这里添加删除视频文件的逻辑
+                    await delete_video_file(data_json['video_path'])
+                elif data_json['type'] == "get_default_video":
+                    logging.info(f"发送默认配置 视频路径: {config.get('default_video')}")
+                    # 在这里添加发送消息到客户端的逻辑
+                    await send_to_all_websockets(json.dumps({"type": "set_default_video", "video_path": config.get("default_video")}))
+            except Exception as e:
+                logging.error(traceback.format_exc())
     finally:
         connected_websockets.remove(websocket)
 
 
 async def delete_video_file(video_path: str):
+    from urllib.parse import unquote
+
     # 根据你的逻辑来获取要删除的视频文件路径
     file_name_with_extension = os.path.basename(video_path)
-    relative_path = os.path.join("static/videos", file_name_with_extension)
+    file_name_with_extension = unquote(file_name_with_extension, 'utf-8')
+    relative_path = os.path.join(static_folder, "videos", file_name_with_extension)
     
     try:
         os.remove(relative_path)  # 删除视频文件
@@ -164,16 +199,37 @@ async def show():
         video_path = get_video(data["type"], data)
 
         if video_path:
-            common.move_and_rename(video_path, "static/videos")
+            static_video_path = os.path.join(static_folder, "videos")
+            logging.debug(f"视频文件移动到的路径：{static_video_path}")
+            ret = common.move_and_rename(video_path, static_video_path)
+            if ret == False:
+                return jsonify({"code": 200, "message": "视频移动失败"})
+
             filename = common.get_filename_with_ext(video_path)
             file_url = f"http://127.0.0.1:{config.get('server_port')}/static/videos/{filename}"
 
-            await send_to_all_websockets(json.dumps({"type": "show", "video_path": file_url}))
+            if "audio_path" not in data:
+                data["audio_path"] = None
+
+            if "insert_index" not in data:
+                data["insert_index"] = -1
+
+            await send_to_all_websockets(
+                json.dumps(
+                    {
+                        "type": "show", 
+                        "video_path": file_url, 
+                        "audio_path": data["audio_path"], 
+                        "insert_index": data["insert_index"]
+                    }
+                )
+            )
 
             return jsonify({"code": 200, "message": "操作成功"})
         
         return jsonify({"code": 200, "message": "视频合成失败"})
     except Exception as e:
+        logging.error(traceback.format_exc())
         return jsonify({"code": -1, "message": f"操作失败: {str(e)}"})
 
 async def main():

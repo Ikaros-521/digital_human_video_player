@@ -25,31 +25,43 @@
 
     // 视频播放队列
     let videoQueue = [];
-    let defaultVideo = './videos/1.mp4'; // 默认视频路径
+    let defaultVideo = ''; // 默认视频路径
     let currentVideo = video1; // 当前播放的视频元素
     let nextVideo = video2; // 下一个将要播放的视频元素
     let isWaitingForNextVideo = false; // 是否正在等待下一个视频加载
 
     // 准备好下一个视频
     function prepareNextVideo(src) {
+        if (!src) {
+            console.log('默认视频不存在或未设置');
+            switchVideos();
+            return;
+        }
+
         if (src === defaultVideo && isWaitingForNextVideo) {
             return; // 如果已经在播放默认视频且还在等待，则不重新加载默认视频
         }
         
         nextVideo.src = src;
-        console.log('准备播放下一个视频：' + src);
+        if (src !== defaultVideo) console.log('准备播放下一个视频：' + src);
         nextVideo.load();
+        nextVideo.onerror = function() {
+            console.log('加载视频失败：' + src);
+            switchVideos(); // 加载失败时跳过当前视频，继续播放下一个视频
+        };
         nextVideo.onloadeddata = function() {
-            console.log(src + '加载完成，准备播放');
+            if (src !== defaultVideo) console.log(src + '加载完成，准备播放');
             isWaitingForNextVideo = false; // 下一个视频已准备好，不再等待
             switchVideos();
         };
+        
 
         if (src !== defaultVideo) {
             isWaitingForNextVideo = true; // 正在等待下一个视频加载，除非它是默认视频
             prepareNextVideo(defaultVideo); // 同时准备默认视频，以备需要时播放
         }
     }
+
 
     // 切换视频
     function switchVideos() {
@@ -67,7 +79,7 @@
     // 设置视频结束时的行为
     video1.onended = video2.onended = function() {
         if (videoQueue.length > 0) {
-            console.log('播放下一个视频');
+            // console.log('播放下一个视频');
             prepareNextVideo(videoQueue.shift()); // 准备队列中的下一个视频
         } else if (!isWaitingForNextVideo) {
             console.log('播放默认视频');
@@ -108,20 +120,25 @@
             } else {
                 videoQueue.splice(data.insert_index, 0, data.video_path); // 插入指定位置
             }
-
-            if ((currentVideo.paused || currentVideo.ended) && !isWaitingForNextVideo) {
-                prepareNextVideo(videoQueue.shift()); // 如果当前没有视频播放，且没有在等待，则立即准备下一个视频
+            
+            if ('interrupt' in data) {
+                if (data.interrupt) { // 检查是否允许打断当前视频播放
+                    prepareNextVideo(videoQueue.shift()); // 如果允许打断，则立即准备下一个视频
+                }
             }
+
+            // if ((currentVideo.paused || currentVideo.ended) && !isWaitingForNextVideo) {
+            //     prepareNextVideo(videoQueue.shift()); // 如果当前没有视频播放，且没有在等待，则立即准备下一个视频
+            // }
         } else if (data.type === 'set_default_video') {
             defaultVideo = data.video_path;
+            // 初始化播放
+            currentVideo.src = defaultVideo; // 初始视频
+            currentVideo.load();
+            currentVideo.play();
+            currentVideo.style.display = 'block'; // 显示当前视频
         }
     };
-
-    // 初始化播放
-    currentVideo.src = defaultVideo; // 初始视频
-    currentVideo.load();
-    currentVideo.play();
-    currentVideo.style.display = 'block'; // 显示当前视频
 </script>
 
 

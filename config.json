@@ -2,6 +2,7 @@
     "server_ip": "127.0.0.1",
     "server_port": 8091,
     "default_video": "./videos/2.mp4",
+    "video_read_path": "static/test/*.mp4",
     "easy_wav2lip": {
         "api_ip_port": "http://127.0.0.1:7860",
         "video_file": "E:\\GitHub_pro\\digital_human_video_player\\static\\imgs\\1.png",
@@ -44,5 +45,10 @@
         "head_model": [],
         "body_model": [["checkpoints", "motion2video_nerf", "May_torso", "model_ckpt_steps_250000.ckpt"]],
         "low_memory_mode": false
+    },
+    "musetalk": {
+        "api_ip_port": "http://127.0.0.1:7860",
+        "video_path": "E:\\GitHub_pro\\digital_human_video_player\\static\\videos\\3.mp4",
+        "bbox_shift": 0
     }
 }

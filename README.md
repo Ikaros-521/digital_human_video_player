@@ -5,6 +5,7 @@
 - [Easy-Wav2Lip](https://github.com/anothermartz/Easy-Wav2Lip)（gradio API，使用的B站：眠NEON 提供的整合包：[视频传送门](https://www.bilibili.com/video/BV1rS421N71b)）  
 - [Sadtalker](https://github.com/OpenTalker/SadTalker)（gradio API，整合包：[夸克网盘](https://pan.quark.cn/s/936dcae8aba0#/list/share/56a79e143a8b4877a98a61854e07b229-AI%20Vtuber/741f94606e414157b8d0a021d3a9ca77-%E8%99%9A%E6%8B%9F%E8%BA%AB%E4%BD%93/6ea2ecc2b19e49c4b1eda383a6aab194-Sadtalker), [迅雷云盘](https://pan.xunlei.com/s/VNitDF0Y3l-qwTpE0A5Rh4DaA1)）
 - [GeneFacePlusPlus](https://github.com/yerfor/GeneFacePlusPlus)（gradio API，使用的B站：眠NEON 提供的整合包：[视频传送门](https://www.bilibili.com/video/BV1vz421R7ot)）  
+- [MuseTalk](https://github.com/TMElyralab/MuseTalk)（gradio API，整合包：）  
 
 ## 环境  
 python：3.10.10  
@@ -37,7 +38,7 @@ python：3.10.10
 
 | 参数名        | 类型   | 是否必需  | 描述                 |
 |--------      |--------|----------|--------------        |
-| type         | string | 是       | 使用的视频合成技术类型(easy_wav2lip / sadtalker / genefaceplusplus / local) |
+| type         | string | 是       | 使用的视频合成技术类型(easy_wav2lip / sadtalker / genefaceplusplus / musetalk / local) |
 | video_path   | string | 是       | 视频文件的绝对路径（在local模式下必填）     |
 | audio_path   | string | 是       | 音频文件的绝对路径     |
 | insert_index | int    | 是       | 插入索引值，队尾插入：-1，队首插入：0，其他自定义 |
@@ -50,6 +51,10 @@ python：3.10.10
 | msg    | string  | 响应消息，描述请求的处理结果 |
 
 # 更新日志
+- v0.1.7
+    - 支持local类型，直接播放本地视频
+    - 支持 MuseTalk 对接
+
 - v0.1.6
     - 新增默认配置`default_video`，可以在配置文件定义默认视频，不需要改源码了
 

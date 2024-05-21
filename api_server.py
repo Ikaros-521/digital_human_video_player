@@ -26,6 +26,9 @@ print(f"static_folder={static_folder}")
 app = Quart(__name__, static_folder=static_folder)
 connected_websockets = set()
 
+# 队列中非默认视频个数
+non_default_video_count = 0
+
 
 def get_video(type: str, data: dict):
     from gradio_client import Client
@@ -146,6 +149,8 @@ async def load_video(filename):
 
 @app.websocket('/ws')
 async def ws():
+    global non_default_video_count
+
     connected_websockets.add(websocket._get_current_object())
     try:
         while True:
@@ -155,18 +160,28 @@ async def ws():
                 logging.info(f"收到客户端数据: {data_json}")
                 # 处理从客户端接收的数据的逻辑
                 if data_json['type'] == "videoEnded":
-                    # 在这里添加删除视频文件的逻辑
-                    await delete_video_file(data_json['video_path'])
+                    non_default_video_count = data_json['count']
+                    # 跳过默认视频
+                    if common.get_filename_with_ext(config.get("default_video")) not in data_json['video_path']:
+                        # 在这里添加删除视频文件的逻辑
+                        await delete_video_file(data_json['video_path'])
                 elif data_json['type'] == "get_default_video":
                     logging.info(f"发送默认配置 视频路径: {config.get('default_video')}")
                     # 在这里添加发送消息到客户端的逻辑
                     await send_to_all_websockets(json.dumps({"type": "set_default_video", "video_path": config.get("default_video")}))
+                elif data_json['type'] == "show":
+                    logging.info(f"队列中非默认视频个数: {data_json['count']}")
+                    non_default_video_count = data_json['count']
+                elif data_json['type'] == "get_non_default_video_count":
+                    logging.info(f"队列中非默认视频个数: {data_json['count']}")
+                    non_default_video_count = data_json['count']    
             except Exception as e:
                 logging.error(traceback.format_exc())
     finally:
         connected_websockets.remove(websocket)
 
 
+# 删除视频文件
 async def delete_video_file(video_path: str):
     from urllib.parse import unquote
 
@@ -201,7 +216,10 @@ async def show():
         if video_path:
             static_video_path = os.path.join(static_folder, "videos")
             logging.debug(f"视频文件移动到的路径：{static_video_path}")
-            ret = common.move_and_rename(video_path, static_video_path)
+            if "move_file" in data:
+                ret = common.move_and_rename(video_path, static_video_path, move_file=data["move_file"])
+            else:
+                ret = common.move_and_rename(video_path, static_video_path)
             if ret == False:
                 return jsonify({"code": 200, "message": "视频移动失败"})
 
@@ -232,30 +250,66 @@ async def show():
         logging.error(traceback.format_exc())
         return jsonify({"code": -1, "message": f"操作失败: {str(e)}"})
 
+
+# 停止当前播放的视频，跳转到下一个
+@app.route('/stop_current_video', methods=['POST'])
+async def stop_current_video():
+    try:
+        #data = await request.get_json()
+
+        #logging.info(f"收到数据：{data}")
+
+        await send_to_all_websockets(
+            json.dumps(
+                {
+                    "type": "stop_current_video"
+                }
+            )
+        )
+
+        return jsonify({"code": 200, "message": "操作成功"})
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        return jsonify({"code": -1, "message": f"操作失败: {str(e)}"})
+
+# 获取非默认视频个数
+@app.route('/get_non_default_video_count', methods=['POST'])
+async def get_non_default_video_count():
+    try:
+        await send_to_all_websockets(
+            json.dumps(
+                {
+                    "type": "get_non_default_video_count"
+                }
+            )
+        )
+        return jsonify({"code": 200, "count": non_default_video_count, "message": "操作成功"})
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        return jsonify({"code": -1, "message": f"操作失败: {str(e)}"})
+
 async def main():
     # 使用 Quart 提供的 run_task 方法来启动异步的 Web 应用
     await app.run_task(host=config.get("server_ip"), port=config.get("server_port"))
 
 
 class StoppableThread(threading.Thread):
-    def __init__(self, target=None):
+    def __init__(self, target=None, stop_event=None):
         super().__init__()
-        self._stop_event = threading.Event()
+        self._stop_event = stop_event
         self._target = target  # 保存目标函数引用
 
     def run(self):
         if self._target:  # 如果有目标函数，调用它
-            self._target()
-        while not self._stop_event.is_set():
-            logging.info("Thread is running")
-            time.sleep(1)
+            self._target(self._stop_event)
+        self._stop_event.wait()  # 等待事件被设置
         logging.info("Thread is stopping")
 
     def stop(self):
         self._stop_event.set()
 
 if __name__ == '__main__':
-    def start_browser():
+    def start_browser(stop_event):
         options = webdriver.ChromeOptions()
         # 设置为开发者模式，避免被浏览器识别为自动化程序
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
@@ -265,11 +319,13 @@ if __name__ == '__main__':
         driver = webdriver.Chrome(options=options)
         driver.get(f'http://127.0.0.1:{config.get("server_port")}')
 
-        while True:
-            time.sleep(1)  # 简单的循环等待，避免CPU占用过高
+        stop_event.wait()  # 等待事件被设置
+
+    # 创建一个停止事件实例
+    stop_event = threading.Event()
 
     # 创建一个可停止的线程实例
-    browser_thread = StoppableThread(target=start_browser)
+    browser_thread = StoppableThread(target=start_browser, stop_event=stop_event)
 
     # 启动线程
     browser_thread.start()

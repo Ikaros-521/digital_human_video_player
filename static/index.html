@@ -7,7 +7,6 @@
     body {
         background-color: #008000;
     }
-
     video {
         width: 100%;
         display: none; /* Initially hide both videos */
@@ -23,14 +22,16 @@
     let video1 = document.getElementById('video1');
     let video2 = document.getElementById('video2');
 
-    // 视频播放队列
-    let videoQueue = [];
+    let videoQueue = []; // 视频播放队列
     let defaultVideo = ''; // 默认视频路径
     let currentVideo = video1; // 当前播放的视频元素
     let nextVideo = video2; // 下一个将要播放的视频元素
     let isWaitingForNextVideo = false; // 是否正在等待下一个视频加载
 
-    // 准备好下一个视频
+    /**
+     * 准备好下一个视频
+     * @param {string} src - 下一个视频的路径
+     */
     function prepareNextVideo(src) {
         if (!src) {
             console.log('默认视频不存在或未设置');
@@ -42,28 +43,38 @@
             return; // 如果已经在播放默认视频且还在等待，则不重新加载默认视频
         }
         
-        nextVideo.src = src;
-        if (src !== defaultVideo) console.log('准备播放下一个视频：' + src);
-        nextVideo.load();
-        nextVideo.onerror = function() {
-            console.log('加载视频失败：' + src);
-            switchVideos(); // 加载失败时跳过当前视频，继续播放下一个视频
-        };
-        nextVideo.onloadeddata = function() {
+        loadVideo(nextVideo, src, () => {
             if (src !== defaultVideo) console.log(src + '加载完成，准备播放');
             isWaitingForNextVideo = false; // 下一个视频已准备好，不再等待
             switchVideos();
-        };
+        });
         
-
         if (src !== defaultVideo) {
             isWaitingForNextVideo = true; // 正在等待下一个视频加载，除非它是默认视频
             prepareNextVideo(defaultVideo); // 同时准备默认视频，以备需要时播放
         }
     }
 
+    /**
+     * 加载视频
+     * @param {HTMLVideoElement} videoElement - 视频元素
+     * @param {string} src - 视频路径
+     * @param {Function} onLoadedCallback - 视频加载完成后的回调函数
+     */
+    function loadVideo(videoElement, src, onLoadedCallback) {
+        videoElement.src = src;
+        if (src !== defaultVideo) console.log('准备播放下一个视频：' + src);
+        videoElement.load();
+        videoElement.onerror = function() {
+            console.log('加载视频失败：' + src);
+            switchVideos(); // 加载失败时跳过当前视频，继续播放下一个视频
+        };
+        videoElement.onloadeddata = onLoadedCallback;
+    }
 
-    // 切换视频
+    /**
+     * 切换视频
+     */
     function switchVideos() {
         if (!isWaitingForNextVideo || currentVideo.src === defaultVideo) {
             // 只有当不再等待下一个视频，或当前视频是默认视频时才切换
@@ -79,68 +90,117 @@
     // 设置视频结束时的行为
     video1.onended = video2.onended = function() {
         if (videoQueue.length > 0) {
-            // console.log('播放下一个视频');
             prepareNextVideo(videoQueue.shift()); // 准备队列中的下一个视频
         } else if (!isWaitingForNextVideo) {
             console.log('播放默认视频');
             prepareNextVideo(defaultVideo); // 没有等待的视频，播放默认视频
         }
-        
-        currentVideoStr = currentVideo.src;
-        if (!currentVideoStr.includes(defaultVideo.substring(1))) {
+
+        if (!currentVideo.src.includes(defaultVideo.substring(1))) {
+            let nonDefaultVideoCount = getNonDefaultVideoCount();
             // 当前视频播放完毕后，通过 WebSocket 回传视频路径
-            const message = JSON.stringify({ type: 'videoEnded', video_path: currentVideo.src });
+            const message = JSON.stringify({ type: 'videoEnded', count: nonDefaultVideoCount, video_path: currentVideo.src });
             ws.send(message);
         }
     };
 
-    // WebSocket接收视频路径并添加到队列
+    // WebSocket 接收视频路径并添加到队列
     const ws = new WebSocket('ws://localhost:8091/ws');
     ws.onopen = function(event) {
         console.log('WebSocket连接成功！');
-        // 在这里可以发送数据或执行其他操作
-        // 假设data是要发送的JSON数据对象
-        const data = {
-            type: 'get_default_video'
-        };
-
-        // 将JSON对象转换为字符串
-        const jsonData = JSON.stringify(data);
-
-        // 发送JSON数据
-        ws.send(jsonData);
+        ws.send(JSON.stringify({ type: 'get_default_video' }));
     };
     ws.onmessage = function(event) {
         const data = JSON.parse(event.data);
-        if (data.type === 'show') {
-            if (data.insert_index === 0) {
-                videoQueue.unshift(data.video_path); // 将新视频添加到队首
-            } else if (data.insert_index === -1) {
-                videoQueue.push(data.video_path); // 将新视频添加到队尾
-            } else {
-                videoQueue.splice(data.insert_index, 0, data.video_path); // 插入指定位置
-            }
-            
-            if ('interrupt' in data) {
-                if (data.interrupt) { // 检查是否允许打断当前视频播放
-                    prepareNextVideo(videoQueue.shift()); // 如果允许打断，则立即准备下一个视频
-                }
-            }
-
-            // if ((currentVideo.paused || currentVideo.ended) && !isWaitingForNextVideo) {
-            //     prepareNextVideo(videoQueue.shift()); // 如果当前没有视频播放，且没有在等待，则立即准备下一个视频
-            // }
-        } else if (data.type === 'set_default_video') {
-            defaultVideo = data.video_path;
-            // 初始化播放
-            currentVideo.src = defaultVideo; // 初始视频
-            currentVideo.load();
-            currentVideo.play();
-            currentVideo.style.display = 'block'; // 显示当前视频
+        switch(data.type) {
+            case 'show':
+                handleShowMessage(data);
+                break;
+            case 'set_default_video':
+                handleSetDefaultVideo(data);
+                break;
+            case 'stop_current_video':
+                stopCurrentVideo(data);
+                break;
+            case 'get_non_default_video_count':
+                getNonDefaultVideoCount(data);
+                break;
         }
     };
-</script>
 
+    /**
+     * 处理 'show' 类型的消息
+     * @param {Object} data - 消息数据
+     */
+    function handleShowMessage(data) {
+        if (data.insert_index === 0) {
+            videoQueue.unshift(data.video_path); // 将新视频添加到队首
+        } else if (data.insert_index === -1) {
+            videoQueue.push(data.video_path); // 将新视频添加到队尾
+        } else {
+            videoQueue.splice(data.insert_index, 0, data.video_path); // 插入指定位置
+        }
+
+        if (data.interrupt) { // 检查是否允许打断当前视频播放
+            prepareNextVideo(videoQueue.shift()); // 如果允许打断，则立即准备下一个视频
+        }
+
+        let nonDefaultVideoCount = getNonDefaultVideoCount();
+
+        ws.send(JSON.stringify({ code: 200, type: data.type, count: nonDefaultVideoCount, message: '播放成功' }));
+    }
+
+    /**
+     * 处理 'set_default_video' 类型的消息
+     * @param {Object} data - 消息数据
+     */
+    function handleSetDefaultVideo(data) {
+        defaultVideo = data.video_path;
+        // 初始化播放
+        currentVideo.src = defaultVideo; // 初始视频
+        currentVideo.load();
+        currentVideo.play();
+        currentVideo.style.display = 'block'; // 显示当前视频
+    }
+
+    /**
+     * 立即停止当前视频并切换到下一个视频或默认视频
+     */
+    function stopCurrentVideo(data) {
+        currentVideo.pause();
+        currentVideo.currentTime = currentVideo.duration; // 模拟视频结束
+        currentVideo.onended();
+        ws.send(JSON.stringify({ code: 200, type: data.type, message: '停止当前播放成功' }));
+    }
+
+    function getNonDefaultVideoCount() {
+        let nonDefaultVideoCount = videoQueue.filter(video => video !== defaultVideo).length;
+        console.log("nonDefaultVideoCount:", nonDefaultVideoCount);
+        console.log("currentVideo.src:", currentVideo.src);
+        console.log("defaultVideo:", defaultVideo);
+        if (!CurVideoisSameWithDefault()) {
+            nonDefaultVideoCount += 1; // 如果当前视频不是默认视频，计入个数
+        }
+        ws.send(JSON.stringify({ code: 200, type: "get_non_default_video_count", count: nonDefaultVideoCount, message: '获取非默认视频数成功' }));
+        return nonDefaultVideoCount;
+    }
+
+    // 当前播放视频是否和默认视频同名
+    function CurVideoisSameWithDefault() {
+        // 提取文件名的函数
+        function getFilename(path) {
+            return path.split('/').pop();
+        }
+
+        // 获取文件名
+        const currentVideoFilename = getFilename(currentVideo.src);
+        const defaultVideoFilename = getFilename(defaultVideo);
+
+        // 比较文件名部分
+        return currentVideoFilename === defaultVideoFilename;
+    }
+
+</script>
 
 </body>
 </html>

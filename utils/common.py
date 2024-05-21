@@ -1,7 +1,7 @@
 # 导入所需的库
 import re, random, requests, json
 import time
-import os
+import os, shutil
 import logging
 from datetime import datetime
 from datetime import timedelta
@@ -96,18 +96,16 @@ class Common:
             now_fmt = beijing_now.strftime(fmt)
             return now_fmt
     
-    def move_and_rename(self, src_file_path, target_dir, new_filename=None, max_attempts=3):
+    def move_and_rename(self, src_file_path, target_dir, new_filename=None, max_attempts=3, move_file=True):
         """
-        移动文件到指定目录，可选地重命名文件。
+        移动或复制文件到指定目录，可选地重命名文件。
         
         :param src_file_path: 源文件的完整路径
         :param target_dir: 目标目录的路径
         :param new_filename: 可选的新文件名（不包括目录路径）
         :param max_attempts: 最大重试次数（默认为3）
+        :param move_file: 如果为True则移动文件，否则复制文件
         """
-
-        import os
-        import shutil
 
         # 确保目标目录存在
         if not os.path.exists(target_dir):
@@ -118,7 +116,7 @@ class Common:
         target_file_path = os.path.join(target_dir, filename)
         logging.debug(f"target_dir={target_dir}, target_file_path={target_file_path}")
 
-        # 尝试移动文件，如果文件被其他程序占用，则进行重试
+        # 尝试移动或复制文件，如果文件被其他程序占用，则进行重试
         attempts = 0
         retry_delay = 0.5
 
@@ -129,16 +127,21 @@ class Common:
                     logging.error(f"文件移动失败: 源文件{src_file_path}不存在")
                     return False
                 
-                shutil.move(src_file_path, target_file_path)
-                logging.info(f"文件:{src_file_path} 已移动到:{target_file_path}")
+                if move_file:
+                    shutil.move(src_file_path, target_file_path)
+                    logging.info(f"文件:{src_file_path} 已移动到:{target_file_path}")
+                else:
+                    shutil.copy2(src_file_path, target_file_path)
+                    logging.info(f"文件:{src_file_path} 已复制到:{target_file_path}")
+                
                 return True
             except Exception as e:
-                logging.error(f"文件移动失败: {e}")
+                logging.error(f"文件操作失败: {e}")
                 logging.info("重试中...")
                 attempts += 1
                 time.sleep(retry_delay)
 
-        logging.warning(f"达到最大重试次数({max_attempts})，无法移动文件:", src_file_path)
+        logging.warning(f"达到最大重试次数({max_attempts})，无法操作文件: {src_file_path}")
         return False
 
         

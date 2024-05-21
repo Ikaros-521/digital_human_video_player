@@ -283,6 +283,8 @@ async def get_non_default_video_count():
                 }
             )
         )
+        # 等待ws返回后对数据的更新
+        await asyncio.sleep(0.5)
         return jsonify({"code": 200, "count": non_default_video_count, "message": "操作成功"})
     except Exception as e:
         logging.error(traceback.format_exc())

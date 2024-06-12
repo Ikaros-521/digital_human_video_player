@@ -227,7 +227,8 @@ async def show():
             if "move_file" in data:
                 if common.detect_os() == "Linux":
                     filepath = video_path.split('=')[1]
-                    filename = os.path.basename(filepath)
+                    filename = common.get_filename_with_ext(filepath)
+                    logging.info(f"视频文件名：{filename}")
                     ret = common.move_and_rename(video_path, static_video_path, new_filename=filename, move_file=data["move_file"])
                 else:
                     ret = common.move_and_rename(video_path, static_video_path, move_file=data["move_file"])
@@ -235,7 +236,7 @@ async def show():
             else:
                 if common.detect_os() == "Linux":
                     filepath = video_path.split('=')[1]
-                    filename = os.path.basename(filepath)
+                    filename = common.get_filename_with_ext(filepath)
                     ret = common.move_and_rename(video_path, static_video_path, new_filename=filename)
                 else:
                     ret = common.move_and_rename(video_path, static_video_path)

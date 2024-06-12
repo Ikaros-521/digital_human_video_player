@@ -7,6 +7,10 @@ from utils.config import Config
 from utils.common import Common
 from utils.logger import Configure_logger
 
+# 获取 httpx 库的日志记录器
+httpx_logger = logging.getLogger("httpx")
+# 设置 httpx 日志记录器的级别为 WARNING
+httpx_logger.setLevel(logging.WARNING)
 
 common = Common()
 # 日志文件路径
@@ -32,13 +36,14 @@ non_default_video_count = 0
 
 def get_video(type: str, data: dict):
     from gradio_client import Client
+    import gradio_client
 
     try:
         if type == "easy_wav2lip":
             client = Client(config.get("easy_wav2lip", "api_ip_port"))
             result = client.predict(
-                config.get("easy_wav2lip", "video_file"),	# filepath  in '支持图片、视频格式' File component
-                data['audio_path'],	# filepath  in '支持mp3、wav格式' Audio component
+                gradio_client.file(config.get("easy_wav2lip", "video_file")),	# filepath  in '支持图片、视频格式' File component
+                gradio_client.file(data['audio_path']),	# filepath  in '支持mp3、wav格式' Audio component
                 config.get("easy_wav2lip", "quality"),	# Literal['Fast', 'Improved', 'Enhanced', 'Experimental']  in '视频质量选项' Radio component
                 config.get("easy_wav2lip", "output_height"),	# Literal['full resolution', 'half resolution']  in '分辨率选项' Radio component
                 config.get("easy_wav2lip", "wav2lip_version"),	# Literal['Wav2Lip', 'Wav2Lip_GAN']  in 'Wav2Lip版本选项' Radio component

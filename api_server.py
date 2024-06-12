@@ -2,6 +2,7 @@ from quart import Quart, websocket, redirect, url_for, jsonify, request, send_fr
 import asyncio, threading, time, os
 import json, logging, traceback
 from selenium import webdriver
+import re
 
 from utils.config import Config
 from utils.common import Common
@@ -208,6 +209,17 @@ async def send_to_all_websockets(data):
     for ws in connected_websockets:
         await ws.send(data)
 
+def extract_filename(video_path):
+    if '=' in video_path:
+        filepath = video_path.split('=')[1]
+    else:
+        filepath = video_path
+
+    match = re.search(r'[^\\/:*?"<>|\r\n]+$', filepath)
+    if match:
+        return match.group()
+    else:
+        return common.get_filename_with_ext(filepath)
 
 @app.route('/show', methods=['POST'])
 async def show():
@@ -223,20 +235,19 @@ async def show():
             logging.debug(f"视频文件移动到的路径：{static_video_path}")
 
             filename = ""
+            move_file = data.get("move_file")
+            is_linux = common.detect_os() == "Linux"
 
-            if "move_file" in data:
-                if common.detect_os() == "Linux":
-                    filepath = video_path.split('=')[1]
-                    filename = common.get_filename_with_ext(filepath)
-                    logging.info(f"视频文件名：{filename}")
-                    ret = common.move_and_rename(video_path, static_video_path, new_filename=filename, move_file=data["move_file"])
+            if move_file:
+                if is_linux:
+                    filename = extract_filename(video_path)
+                    ret = common.move_and_rename(video_path, static_video_path, new_filename=filename, move_file=move_file)
                 else:
-                    ret = common.move_and_rename(video_path, static_video_path, move_file=data["move_file"])
+                    ret = common.move_and_rename(video_path, static_video_path, move_file=move_file)
                     filename = common.get_filename_with_ext(video_path)
             else:
-                if common.detect_os() == "Linux":
-                    filepath = video_path.split('=')[1]
-                    filename = common.get_filename_with_ext(filepath)
+                if is_linux:
+                    filename = extract_filename(video_path)
                     ret = common.move_and_rename(video_path, static_video_path, new_filename=filename)
                 else:
                     ret = common.move_and_rename(video_path, static_video_path)

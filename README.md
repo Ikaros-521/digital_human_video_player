@@ -98,6 +98,7 @@ python：3.10.10
 - v0.1.9
     - easy_wav2lip文件传参改用gradio_client传递，可以支持本地文件传递到云API
     - 提高httpx日志等级到WARNING
+    - 针对linux系统请求win的gradio时，路径解析不正常问题进行针对性修正
 
 - v0.1.8
     - 支持接口 stop_current_video，跳过当前播放的视频，播放下一个视频

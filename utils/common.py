@@ -96,6 +96,8 @@ class Common:
             now_fmt = beijing_now.strftime(fmt)
             return now_fmt
     
+    
+
     def move_and_rename(self, src_file_path, target_dir, new_filename=None, max_attempts=3, move_file=True):
         """
         移动或复制文件到指定目录，可选地重命名文件。
@@ -160,3 +162,28 @@ class Common:
 
         filename = os.path.basename(filepath)
         return filename
+    
+    # 识别操作系统
+    def detect_os(self):
+        """
+        识别操作系统
+        """
+        import platform
+
+        system = platform.system()
+        if system == 'Linux':
+            return 'Linux'
+        elif system == 'Windows':
+            return 'Windows'
+        elif system == 'Darwin':
+            return 'MacOS'
+        
+        # 如果platform模块无法识别，则尝试使用os模块
+        # system = os.name
+        # if system == 'posix':
+        #     return '可能是Linux或MacOS'
+        # elif system == 'nt':
+        #     return 'Windows'
+
+        return '未知系统'
+    

@@ -221,14 +221,28 @@ async def show():
         if video_path:
             static_video_path = os.path.join(static_folder, "videos")
             logging.debug(f"视频文件移动到的路径：{static_video_path}")
+
+            filename = ""
+
             if "move_file" in data:
-                ret = common.move_and_rename(video_path, static_video_path, move_file=data["move_file"])
+                if common.detect_os() == "Linux":
+                    filepath = video_path.split('=')[1]
+                    filename = os.path.basename(filepath)
+                    ret = common.move_and_rename(video_path, static_video_path, new_filename=filename, move_file=data["move_file"])
+                else:
+                    ret = common.move_and_rename(video_path, static_video_path, move_file=data["move_file"])
+                    filename = common.get_filename_with_ext(video_path)
             else:
-                ret = common.move_and_rename(video_path, static_video_path)
+                if common.detect_os() == "Linux":
+                    filepath = video_path.split('=')[1]
+                    filename = os.path.basename(filepath)
+                    ret = common.move_and_rename(video_path, static_video_path, new_filename=filename)
+                else:
+                    ret = common.move_and_rename(video_path, static_video_path)
+                    filename = common.get_filename_with_ext(video_path)
             if ret == False:
                 return jsonify({"code": 200, "message": "视频移动失败"})
 
-            filename = common.get_filename_with_ext(video_path)
             file_url = f"http://127.0.0.1:{config.get('server_port')}/static/videos/{filename}"
 
             if "audio_path" not in data:

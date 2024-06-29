@@ -1,21 +1,13 @@
-from fastapi import FastAPI, WebSocket, Request, WebSocketDisconnect
-from fastapi.responses import RedirectResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
-import uvicorn
-import asyncio
-import os
-import json
-import logging
-import traceback
-import threading
+from quart import Quart, websocket, redirect, url_for, jsonify, request, send_from_directory 
+import asyncio, threading, time, os
+import json, logging, traceback
 from selenium import webdriver
-from urllib.parse import unquote
-
+import re
 
 from utils.config import Config
 from utils.common import Common
 from utils.logger import Configure_logger
-from utils.video_generate import run_get_video
+from utils.video_generate import get_video
 
 # 获取 httpx 库的日志记录器
 httpx_logger = logging.getLogger("httpx")
@@ -35,38 +27,35 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 static_folder = os.path.join(script_dir, 'static')
 static_folder = os.path.abspath(static_folder)
 
-logging.info(f"static_folder={static_folder}")
+print(f"static_folder={static_folder}")
 
-app = FastAPI()
-
-# Mount static folder
-app.mount("/static", StaticFiles(directory=static_folder), name="static")
-
+app = Quart(__name__, static_folder=static_folder)
 connected_websockets = set()
-
 
 # 队列中非默认视频个数
 non_default_video_count = 0
 
-@app.get("/")
+
+
+@app.route('/')
 async def home():
-    return RedirectResponse(url="/static/index.html")
+    return redirect(url_for('static', filename='index.html'))
 
-@app.get("/videos/{filename:path}")
-async def load_video(filename: str):
-    video_path = os.path.join(static_folder, 'video', filename)
-    return await StaticFiles(directory=os.path.dirname(video_path)).get_response(os.path.basename(video_path))
+@app.route('/videos/<path:filename>')
+async def load_video(filename):
+    video_path = os.path.join(app.static_folder, 'video', filename)
+    return await send_from_directory(os.path.dirname(video_path), os.path.basename(video_path))
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+
+@app.websocket('/ws')
+async def ws():
     global non_default_video_count
 
-    await websocket.accept()
-    connected_websockets.add(websocket)
+    connected_websockets.add(websocket._get_current_object())
     try:
         while True:
             try:
-                data = await websocket.receive_text()
+                data = await websocket.receive()
                 data_json = json.loads(data)
                 logging.info(f"收到客户端数据: {data_json}")
                 # 处理从客户端接收的数据的逻辑
@@ -85,21 +74,22 @@ async def websocket_endpoint(websocket: WebSocket):
                     non_default_video_count = data_json['count']
                 elif data_json['type'] == "get_non_default_video_count":
                     logging.info(f"队列中非默认视频个数: {data_json['count']}")
-                    non_default_video_count = data_json['count']
-            except WebSocketDisconnect:
-                logging.info("ws客户端连接已关闭")
-                break
+                    non_default_video_count = data_json['count']    
             except Exception as e:
                 logging.error(traceback.format_exc())
     finally:
         connected_websockets.remove(websocket)
 
+
 # 删除视频文件
 async def delete_video_file(video_path: str):
+    from urllib.parse import unquote
+
+    # 根据你的逻辑来获取要删除的视频文件路径
     file_name_with_extension = os.path.basename(video_path)
     file_name_with_extension = unquote(file_name_with_extension, 'utf-8')
     relative_path = os.path.join(static_folder, "videos", file_name_with_extension)
-
+    
     try:
         os.remove(relative_path)  # 删除视频文件
         logging.info(f"成功删除视频文件 {relative_path}。")
@@ -108,12 +98,12 @@ async def delete_video_file(video_path: str):
     except Exception as e:
         logging.error(f"删除视频文件时发生错误：{str(e)}")
 
+
 async def send_to_all_websockets(data):
     for ws in connected_websockets:
-        await ws.send_text(data)
+        await ws.send(data)
 
 def extract_filename(video_path):
-    import re
     if '=' in video_path:
         filepath = video_path.split('=')[1]
     else:
@@ -125,14 +115,14 @@ def extract_filename(video_path):
     else:
         return common.get_filename_with_ext(filepath)
 
-@app.post("/show")
-async def show(request: Request):
+@app.route('/show', methods=['POST'])
+async def show():
     try:
-        data = await request.json()
+        data = await request.get_json()
 
         logging.info(f"收到数据：{data}")
 
-        video_path = await run_get_video(data["type"], data, config)
+        video_path = await get_video(data["type"], data, config)
 
         if video_path:
             static_video_path = os.path.join(static_folder, "videos")
@@ -157,7 +147,7 @@ async def show(request: Request):
                     ret = common.move_and_rename(video_path, static_video_path)
                     filename = common.get_filename_with_ext(video_path)
             if ret == False:
-                return JSONResponse({"code": 200, "message": "视频移动失败"})
+                return jsonify({"code": 200, "message": "视频移动失败"})
 
             file_url = f"http://127.0.0.1:{config.get('server_port')}/static/videos/{filename}"
 
@@ -170,24 +160,30 @@ async def show(request: Request):
             await send_to_all_websockets(
                 json.dumps(
                     {
-                        "type": "show",
-                        "video_path": file_url,
-                        "audio_path": data["audio_path"],
+                        "type": "show", 
+                        "video_path": file_url, 
+                        "audio_path": data["audio_path"], 
                         "insert_index": data["insert_index"]
                     }
                 )
             )
 
-            return JSONResponse({"code": 200, "message": "操作成功"})
-
-        return JSONResponse({"code": 200, "message": "视频合成失败"})
+            return jsonify({"code": 200, "message": "操作成功"})
+        
+        return jsonify({"code": 200, "message": "视频合成失败"})
     except Exception as e:
         logging.error(traceback.format_exc())
-        return JSONResponse({"code": -1, "message": f"操作失败: {str(e)}"})
+        return jsonify({"code": -1, "message": f"操作失败: {str(e)}"})
 
-@app.post("/stop_current_video")
+
+# 停止当前播放的视频，跳转到下一个
+@app.route('/stop_current_video', methods=['POST'])
 async def stop_current_video():
     try:
+        #data = await request.get_json()
+
+        #logging.info(f"收到数据：{data}")
+
         await send_to_all_websockets(
             json.dumps(
                 {
@@ -195,12 +191,14 @@ async def stop_current_video():
                 }
             )
         )
-        return JSONResponse({"code": 200, "message": "操作成功"})
+
+        return jsonify({"code": 200, "message": "操作成功"})
     except Exception as e:
         logging.error(traceback.format_exc())
-        return JSONResponse({"code": -1, "message": f"操作失败: {str(e)}"})
+        return jsonify({"code": -1, "message": f"操作失败: {str(e)}"})
 
-@app.post("/get_non_default_video_count")
+# 获取非默认视频个数
+@app.route('/get_non_default_video_count', methods=['POST'])
 async def get_non_default_video_count():
     try:
         await send_to_all_websockets(
@@ -210,43 +208,58 @@ async def get_non_default_video_count():
                 }
             )
         )
+        # 等待ws返回后对数据的更新
         await asyncio.sleep(0.5)
-        return JSONResponse({"code": 200, "count": non_default_video_count, "message": "操作成功"})
+        return jsonify({"code": 200, "count": non_default_video_count, "message": "操作成功"})
     except Exception as e:
         logging.error(traceback.format_exc())
-        return JSONResponse({"code": -1, "message": f"操作失败: {str(e)}"})
+        return jsonify({"code": -1, "message": f"操作失败: {str(e)}"})
 
-def start_browser(stop_event):
-    options = webdriver.ChromeOptions()
-    # 设置为开发者模式，避免被浏览器识别为自动化程序
-    options.add_experimental_option('excludeSwitches', ['enable-automation'])
-    options.add_argument('--autoplay-policy=no-user-gesture-required')
+async def main():
+    # 使用 Quart 提供的 run_task 方法来启动异步的 Web 应用
+    await app.run_task(host=config.get("server_ip"), port=config.get("server_port"))
 
-    driver = webdriver.Chrome(options=options)
-    driver.get(f'http://127.0.0.1:{config.get("server_port")}')
-    stop_event.wait()
 
 class StoppableThread(threading.Thread):
     def __init__(self, target=None, stop_event=None):
         super().__init__()
         self._stop_event = stop_event
-        self._target = target
+        self._target = target  # 保存目标函数引用
 
     def run(self):
-        if self._target:
+        if self._target:  # 如果有目标函数，调用它
             self._target(self._stop_event)
-        self._stop_event.wait()
+        self._stop_event.wait()  # 等待事件被设置
         logging.info("Thread is stopping")
 
     def stop(self):
         self._stop_event.set()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
+    def start_browser(stop_event):
+        options = webdriver.ChromeOptions()
+        # 设置为开发者模式，避免被浏览器识别为自动化程序
+        options.add_experimental_option('excludeSwitches', ['enable-automation'])
+        options.add_argument('--autoplay-policy=no-user-gesture-required')
+
+        # 使用`options`而不是`chrome_options`作为参数
+        driver = webdriver.Chrome(options=options)
+        driver.get(f'http://127.0.0.1:{config.get("server_port")}')
+
+        stop_event.wait()  # 等待事件被设置
+
+    # 创建一个停止事件实例
     stop_event = threading.Event()
+
+    # 创建一个可停止的线程实例
     browser_thread = StoppableThread(target=start_browser, stop_event=stop_event)
+
+    # 启动线程
     browser_thread.start()
 
-    uvicorn.run(app, host=config.get("server_ip"), port=config.get("server_port"))
+    asyncio.run(main())
 
-    browser_thread.stop()
+    # 在某个时刻停止线程
+    # browser_thread.stop()
+
     os._exit(0)

@@ -26,6 +26,8 @@ python：3.10.10
 
 # API
 
+运行后，可以查看API文档：[http://127.0.0.1:8091/docs](http://127.0.0.1:8091/docs)  
+
 ## 播放视频
 
 ### 概述
@@ -94,6 +96,10 @@ python：3.10.10
 | msg    | string  | 响应消息，描述请求的处理结果 |
 
 # 更新日志
+
+- v0.2.0
+    - 更换Quart为FastAPI
+    - 针对 gradio视频合成卡播放问题的解决（gradio同步请求阻塞了server的其他请求，而前端的视频加载是通过server的URL加载的，server被阻塞后无法处理URL请求，导致前端被卡视频加载导致卡顿。目前将请求通过线程池（10个）单独托管，避免阻塞）
 
 - v0.1.9
     - easy_wav2lip文件传参改用gradio_client传递，可以支持本地文件传递到云API

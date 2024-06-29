@@ -22,7 +22,7 @@
         "batch_process": "False"
     },
     "sadtalker": {
-        "gradio_api_type": "api_name",
+        "gradio_api_type": "fn_index",
         "api_ip_port": "http://127.0.0.1:7860",
         "img_file": "E:\\GitHub_pro\\digital_human_video_player\\static\\imgs\\2.png",
         "preprocess": "crop",

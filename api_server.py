@@ -16,6 +16,7 @@ from utils.config import Config
 from utils.common import Common
 from utils.logger import Configure_logger
 from utils.video_generate import run_get_video
+from utils.models import ShowMessage, GetNonDefaultVideoCountResult, CommonResult
 
 # 获取 httpx 库的日志记录器
 httpx_logger = logging.getLogger("httpx")
@@ -126,9 +127,9 @@ def extract_filename(video_path):
         return common.get_filename_with_ext(filepath)
 
 @app.post("/show")
-async def show(request: Request):
+async def show(msg: ShowMessage):
     try:
-        data = await request.json()
+        data = msg.model_dump()
 
         logging.info(f"收到数据：{data}")
 
@@ -156,8 +157,8 @@ async def show(request: Request):
                 else:
                     ret = common.move_and_rename(video_path, static_video_path)
                     filename = common.get_filename_with_ext(video_path)
-            if ret == False:
-                return JSONResponse({"code": 200, "message": "视频移动失败"})
+            if not ret:
+                return CommonResult(code=200, message="视频移动失败")
 
             file_url = f"http://127.0.0.1:{config.get('server_port')}/static/videos/{filename}"
 
@@ -178,12 +179,11 @@ async def show(request: Request):
                 )
             )
 
-            return JSONResponse({"code": 200, "message": "操作成功"})
-
-        return JSONResponse({"code": 200, "message": "视频合成失败"})
+            return CommonResult(code=200, message="操作成功")
+        return CommonResult(code=200, message="视频合成失败")
     except Exception as e:
         logging.error(traceback.format_exc())
-        return JSONResponse({"code": -1, "message": f"操作失败: {str(e)}"})
+        return CommonResult(code=-1, message=f"操作失败: {str(e)}")
 
 @app.post("/stop_current_video")
 async def stop_current_video():
@@ -195,10 +195,10 @@ async def stop_current_video():
                 }
             )
         )
-        return JSONResponse({"code": 200, "message": "操作成功"})
+        return CommonResult(code=200, message="操作成功")
     except Exception as e:
         logging.error(traceback.format_exc())
-        return JSONResponse({"code": -1, "message": f"操作失败: {str(e)}"})
+        return CommonResult(code=-1, message=f"操作失败: {str(e)}")
 
 @app.post("/get_non_default_video_count")
 async def get_non_default_video_count():
@@ -211,10 +211,10 @@ async def get_non_default_video_count():
             )
         )
         await asyncio.sleep(0.5)
-        return JSONResponse({"code": 200, "count": non_default_video_count, "message": "操作成功"})
+        return GetNonDefaultVideoCountResult(code=200, count=non_default_video_count, message="操作成功")
     except Exception as e:
         logging.error(traceback.format_exc())
-        return JSONResponse({"code": -1, "message": f"操作失败: {str(e)}"})
+        return CommonResult(code=-1, message=f"操作失败: {str(e)}")
 
 def start_browser(stop_event):
     options = webdriver.ChromeOptions()

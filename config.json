@@ -50,5 +50,11 @@
         "api_ip_port": "http://127.0.0.1:7860",
         "video_path": "E:\\GitHub_pro\\digital_human_video_player\\static\\videos\\3.mp4",
         "bbox_shift": 0
+    },
+    "anitalker": {
+        "api_ip_port": "http://127.0.0.1:7860",
+        "img_file": "E:\\GitHub_pro\\digital_human_video_player\\static\\imgs\\2.png",
+        "is_mor": false,
+        "face_d": 0
     }
 }

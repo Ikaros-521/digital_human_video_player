@@ -1,5 +1,5 @@
 # quart
 selenium
-gradio_client==0.16.3
+gradio_client==1.2.0
 colorlog
 fastapi

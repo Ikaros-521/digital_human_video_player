@@ -32,7 +32,7 @@ fsspec==2024.2.0
 future==1.0.0
 gevent==24.2.1
 gevent-websocket==0.10.1
-gradio_client==0.16.3
+gradio_client==1.2.0
 greenlet==3.0.3
 h11==0.14.0
 h2==4.1.0

@@ -6,6 +6,7 @@
 - [Sadtalker](https://github.com/OpenTalker/SadTalker)（gradio API，整合包：[夸克网盘](https://pan.quark.cn/s/936dcae8aba0#/list/share/56a79e143a8b4877a98a61854e07b229-AI%20Vtuber/741f94606e414157b8d0a021d3a9ca77-%E8%99%9A%E6%8B%9F%E8%BA%AB%E4%BD%93/6ea2ecc2b19e49c4b1eda383a6aab194-Sadtalker), [迅雷云盘](https://pan.xunlei.com/s/VNitDF0Y3l-qwTpE0A5Rh4DaA1)）
 - [GeneFacePlusPlus](https://github.com/yerfor/GeneFacePlusPlus)（gradio API，使用的B站：眠NEON 提供的整合包：[视频传送门](https://www.bilibili.com/video/BV1vz421R7ot)）  
 - [MuseTalk](https://github.com/TMElyralab/MuseTalk)（gradio API，整合包：）  
+- [AniTalker](https://github.com/X-LANCE/AniTalker)（gradio API，使用的B站：刘悦的技术博客 提供的整合包：[下载](https://pan.quark.cn/s/936dcae8aba0#/list/share/56a79e143a8b4877a98a61854e07b229-AI%20Vtuber/741f94606e414157b8d0a021d3a9ca77-%E8%99%9A%E6%8B%9F%E8%BA%AB%E4%BD%93/d31da81a7d64488d812ead76d3bc9f9c-AniTalker), [视频传送门](https://www.bilibili.com/video/BV1rS421N71b)）  
 
 ## 环境  
 python：3.10.10  
@@ -96,6 +97,10 @@ python：3.10.10
 | msg    | string  | 响应消息，描述请求的处理结果 |
 
 # 更新日志
+
+- v0.2.2
+    - 对接 AniTalker gradio API（gradio_client版本要求1.2.0及以上）
+    - 删除旧版quart库实现的版本
 
 - v0.2.1
     - 规范化API实现

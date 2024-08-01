@@ -105,6 +105,22 @@ def get_video(type: str, data: dict, config: dict):
             logging.info(f'{type}合成成功，生成在：{result[0]["video"]}')
 
             return result[0]["video"]
+        elif type == "anitalker":
+            # gradio_client-1.2.0
+            from gradio_client import handle_file
+
+            client = Client(config.get("anitalker", "api_ip_port"))
+            result = client.predict(
+                face=handle_file(config.get("anitalker", "img_file")), # 图片路径，1:1像素比
+                audio=handle_file(data['audio_path']),
+                is_mor=config.get("anitalker", "is_mor"), # 视频超分，0为关闭，1为开启
+                face_d=config.get("anitalker", "face_d"), # 面部朝向,0为正面,0.25为侧面
+                api_name="/do_cloth"
+            )
+
+            logging.info(f'{type}合成成功，生成在：{result["video"]}')
+
+            return result["video"]
         elif type == "local":
             return data['video_path']
     except Exception as e:

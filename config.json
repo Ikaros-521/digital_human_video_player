@@ -3,6 +3,7 @@
     "server_port": 8091,
     "default_video": "./videos/long_video.mp4",
     "video_read_path": "static/test/*.mp4",
+    "auto_del_video": false,
     "easy_wav2lip": {
         "api_ip_port": "http://127.0.0.1:7860",
         "video_file": "E:\\GitHub_pro\\digital_human_video_player\\static\\imgs\\1.png",

@@ -98,6 +98,8 @@
 
         if (!currentVideo.src.includes(defaultVideo.substring(1))) {
             let nonDefaultVideoCount = getNonDefaultVideoCount();
+            // 获取视频队列，发送给ws服务端同步数据
+            getVideoQueue();
             // 当前视频播放完毕后，通过 WebSocket 回传视频路径
             const message = JSON.stringify({ type: 'videoEnded', count: nonDefaultVideoCount, video_path: currentVideo.src });
             ws.send(message);
@@ -124,6 +126,9 @@
                 break;
             case 'get_non_default_video_count':
                 getNonDefaultVideoCount(data);
+                break;
+            case 'get_video_queue':
+                getVideoQueue();
                 break;
         }
     };
@@ -183,6 +188,12 @@
         }
         ws.send(JSON.stringify({ code: 200, type: "get_non_default_video_count", count: nonDefaultVideoCount, message: '获取非默认视频数成功' }));
         return nonDefaultVideoCount;
+    }
+
+    // 获取视频播放列表数据
+    function getVideoQueue() {
+        ws.send(JSON.stringify({ code: 200, type: "get_video_queue", data: videoQueue, message: '获取视频播放列表成功' }));
+        return videoQueue;
     }
 
     // 当前播放视频是否和默认视频同名

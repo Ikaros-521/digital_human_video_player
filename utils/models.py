@@ -13,6 +13,12 @@ class GetNonDefaultVideoCountResult(BaseModel):
     message: str
     count: int
 
+class GetVideoQueueResult(BaseModel):
+    code: int
+    data: list
+    message: str
+    
+
 """
 通用
 """ 

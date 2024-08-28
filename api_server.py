@@ -16,7 +16,7 @@ from utils.config import Config
 from utils.common import Common
 from utils.logger import Configure_logger
 from utils.video_generate import run_get_video
-from utils.models import ShowMessage, GetNonDefaultVideoCountResult, CommonResult
+from utils.models import ShowMessage, GetNonDefaultVideoCountResult, GetVideoQueueResult, CommonResult
 
 # 获取 httpx 库的日志记录器
 httpx_logger = logging.getLogger("httpx")
@@ -48,6 +48,8 @@ connected_websockets = set()
 
 # 队列中非默认视频个数
 non_default_video_count = 0
+# 视频播放队列数据
+video_queue = []
 
 @app.get("/")
 async def home():
@@ -60,7 +62,7 @@ async def load_video(filename: str):
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    global non_default_video_count
+    global non_default_video_count, video_queue
 
     await websocket.accept()
     connected_websockets.add(websocket)
@@ -75,8 +77,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     non_default_video_count = data_json['count']
                     # 跳过默认视频
                     if common.get_filename_with_ext(config.get("default_video")) not in data_json['video_path']:
-                        # 在这里添加删除视频文件的逻辑
-                        await delete_video_file(data_json['video_path'])
+                        # 是否启用了自动删除视频配置（视频由于占用大，建议启用视频删除避免磁盘占满）
+                        if config.get("auto_del_video"):
+                            # 在这里添加删除视频文件的逻辑
+                            await delete_video_file(data_json['video_path'])
                 elif data_json['type'] == "get_default_video":
                     logging.info(f"发送默认配置 视频路径: {config.get('default_video')}")
                     # 在这里添加发送消息到客户端的逻辑
@@ -87,6 +91,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 elif data_json['type'] == "get_non_default_video_count":
                     logging.info(f"队列中非默认视频个数: {data_json['count']}")
                     non_default_video_count = data_json['count']
+                elif data_json['type'] == "get_video_queue":
+                    logging.debug(f"视频队列: {data_json['data']}")
+                    video_queue = data_json['data']
             except WebSocketDisconnect:
                 logging.info("ws客户端连接已关闭")
                 break
@@ -153,9 +160,9 @@ async def show(msg: ShowMessage):
             else:
                 if is_linux:
                     filename = extract_filename(video_path)
-                    ret = common.move_and_rename(video_path, static_video_path, new_filename=filename)
+                    ret = common.move_and_rename(video_path, static_video_path, new_filename=filename, move_file=False)
                 else:
-                    ret = common.move_and_rename(video_path, static_video_path)
+                    ret = common.move_and_rename(video_path, static_video_path, move_file=False)
                     filename = common.get_filename_with_ext(video_path)
             if not ret:
                 return CommonResult(code=200, message="视频移动失败")
@@ -216,13 +223,37 @@ async def get_non_default_video_count():
         logging.error(traceback.format_exc())
         return CommonResult(code=-1, message=f"操作失败: {str(e)}")
 
+# 获取视频队列
+@app.post("/get_video_queue")
+async def get_video_queue():
+    try:
+        await send_to_all_websockets(
+            json.dumps(
+                {
+                    "type": "get_video_queue"
+                }
+            )
+        )
+        await asyncio.sleep(0.5)
+        return GetVideoQueueResult(code=200, data=video_queue, message="操作成功")
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        return CommonResult(code=-1, message=f"操作失败: {str(e)}")
+
 def start_browser(stop_event):
     options = webdriver.ChromeOptions()
     # 设置为开发者模式，避免被浏览器识别为自动化程序
     options.add_experimental_option('excludeSwitches', ['enable-automation'])
     options.add_argument('--autoplay-policy=no-user-gesture-required')
-
     driver = webdriver.Chrome(options=options)
+
+    # 火狐
+    # options = webdriver.FirefoxOptions()
+    # # 设置为开发者模式，避免被浏览器识别为自动化程序
+    # options.set_preference('dom.webdriver.enabled', False)
+    # options.set_preference('media.autoplay.default', 0)  # 设置自动播放策略
+    # driver = webdriver.Firefox(options=options)
+
     driver.get(f'http://127.0.0.1:{config.get("server_port")}')
     stop_event.wait()
 

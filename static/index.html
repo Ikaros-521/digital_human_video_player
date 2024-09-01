@@ -4,11 +4,19 @@
 <meta charset="UTF-8">
 <title>数字人视频播放器</title>
 <style>
+    html, body {
+        height: 100%;
+        margin: 0; /* 移除默认的边距 */
+    }
     body {
         background-color: #008000;
+        display: flex; /* 使用Flexbox布局使内容可以垂直居中 */
+        justify-content: center; /* 水平居中 */
+        align-items: center; /* 垂直居中 */
     }
     video {
         width: 100%;
+        height: 100%;
         display: none; /* Initially hide both videos */
     }
 </style>

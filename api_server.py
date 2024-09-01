@@ -187,6 +187,9 @@ async def show(msg: ShowMessage):
                     )
                 )
             else:
+                if "captions_printer_start_delay" not in data:
+                    data["captions_printer_start_delay"] = 0
+                
                 await send_to_all_websockets(
                     json.dumps(
                         {
@@ -194,6 +197,7 @@ async def show(msg: ShowMessage):
                             "video_path": file_url,
                             "audio_path": data["audio_path"],
                             "captions_printer": data["captions_printer"],
+                            "captions_printer_start_delay": data["captions_printer_start_delay"],
                             "insert_index": data["insert_index"]
                         }
                     )

@@ -6,6 +6,7 @@ class ShowMessage(BaseModel):
     video_path: str
     audio_path: str
     captions_printer: Optional[str] = Field(None)
+    captions_printer_start_delay: Optional[int] = Field(None)
     insert_index: int
     move_file: Optional[bool] = Field(None)
     

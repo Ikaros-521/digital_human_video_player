@@ -113,7 +113,7 @@
 
             // 发送到字幕打印机
             if ("captions_printer" in data) {
-                getData('http://127.0.0.1:5500/send_message', {"content": data.captions_printer})
+                getData('http://127.0.0.1:5500/send_message', {"content": data.captions_printer, "start_delay": data.captions_printer_start_delay})
                     .then(data => {
                         console.log('成功:', data);
                     })

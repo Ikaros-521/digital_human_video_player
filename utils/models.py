@@ -5,6 +5,7 @@ class ShowMessage(BaseModel):
     type: str
     video_path: str
     audio_path: str
+    captions_printer: Optional[str] = Field(None)
     insert_index: int
     move_file: Optional[bool] = Field(None)
     

@@ -30,12 +30,14 @@
 
     /**
      * 准备好下一个视频
-     * @param {string} src - 下一个视频的路径
+     * @param {json} data - 下一个视频的路径等
      */
-    function prepareNextVideo(src) {
+    function prepareNextVideo(data) {
+        let src = data.video_path;
+
         if (!src) {
             console.log('默认视频不存在或未设置');
-            switchVideos();
+            switchVideos(data);
             return;
         }
 
@@ -46,12 +48,12 @@
         loadVideo(nextVideo, src, () => {
             if (src !== defaultVideo) console.log(src + '加载完成，准备播放');
             isWaitingForNextVideo = false; // 下一个视频已准备好，不再等待
-            switchVideos();
+            switchVideos(data);
         });
         
         if (src !== defaultVideo) {
             isWaitingForNextVideo = true; // 正在等待下一个视频加载，除非它是默认视频
-            prepareNextVideo(defaultVideo); // 同时准备默认视频，以备需要时播放
+            prepareNextVideo({"video_path": defaultVideo}); // 同时准备默认视频，以备需要时播放
         }
     }
 
@@ -67,21 +69,59 @@
         videoElement.load();
         videoElement.onerror = function() {
             console.log('加载视频失败：' + src);
-            switchVideos(); // 加载失败时跳过当前视频，继续播放下一个视频
+            switchVideos(videoElement); // 加载失败时跳过当前视频，继续播放下一个视频
         };
         videoElement.onloadeddata = onLoadedCallback;
+
+        // 加载字幕数据到字幕轨道
+
+    }
+
+    function getData(url, params = {}) {
+        // 将参数对象转换为查询字符串
+        const queryString = new URLSearchParams(params).toString();
+        const fullUrl = `${url}?${queryString}`;
+
+        return fetch(fullUrl, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            // 检查响应是否成功
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json(); // 解析为 JSON
+        })
+        .catch(error => {
+            console.error('请求失败:', error);
+            throw error; // 将错误抛出，以便在调用时进行处理
+        });
     }
 
     /**
      * 切换视频
      */
-    function switchVideos() {
+    function switchVideos(data) {
         if (!isWaitingForNextVideo || currentVideo.src === defaultVideo) {
             // 只有当不再等待下一个视频，或当前视频是默认视频时才切换
             currentVideo.style.display = 'none';
             nextVideo.style.display = 'block';
             nextVideo.play();
 
+            // 发送到字幕打印机
+            if ("captions_printer" in data) {
+                getData('http://127.0.0.1:5500/send_message', {"content": data.captions_printer})
+                    .then(data => {
+                        console.log('成功:', data);
+                    })
+                    .catch(error => {
+                        console.error('错误:', error);
+                    });
+            }
+            
             // 交换当前视频和下一个视频的引用
             [currentVideo, nextVideo] = [nextVideo, currentVideo];
         }
@@ -93,7 +133,7 @@
             prepareNextVideo(videoQueue.shift()); // 准备队列中的下一个视频
         } else if (!isWaitingForNextVideo) {
             console.log('播放默认视频');
-            prepareNextVideo(defaultVideo); // 没有等待的视频，播放默认视频
+            prepareNextVideo({"video_path": defaultVideo}); // 没有等待的视频，播放默认视频
         }
 
         if (!currentVideo.src.includes(defaultVideo.substring(1))) {
@@ -139,11 +179,11 @@
      */
     function handleShowMessage(data) {
         if (data.insert_index === 0) {
-            videoQueue.unshift(data.video_path); // 将新视频添加到队首
+            videoQueue.unshift(data); // 将新视频添加到队首
         } else if (data.insert_index === -1) {
-            videoQueue.push(data.video_path); // 将新视频添加到队尾
+            videoQueue.push(data); // 将新视频添加到队尾
         } else {
-            videoQueue.splice(data.insert_index, 0, data.video_path); // 插入指定位置
+            videoQueue.splice(data.insert_index, 0, data); // 插入指定位置
         }
 
         if (data.interrupt) { // 检查是否允许打断当前视频播放
@@ -179,7 +219,7 @@
     }
 
     function getNonDefaultVideoCount() {
-        let nonDefaultVideoCount = videoQueue.filter(video => video !== defaultVideo).length;
+        let nonDefaultVideoCount = videoQueue.filter(video => video.video_path !== defaultVideo).length;
         console.log("nonDefaultVideoCount:", nonDefaultVideoCount);
         console.log("currentVideo.src:", currentVideo.src);
         console.log("defaultVideo:", defaultVideo);

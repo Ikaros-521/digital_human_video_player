@@ -175,16 +175,29 @@ async def show(msg: ShowMessage):
             if "insert_index" not in data:
                 data["insert_index"] = -1
 
-            await send_to_all_websockets(
-                json.dumps(
-                    {
-                        "type": "show",
-                        "video_path": file_url,
-                        "audio_path": data["audio_path"],
-                        "insert_index": data["insert_index"]
-                    }
+            if "captions_printer" not in data:
+                await send_to_all_websockets(
+                    json.dumps(
+                        {
+                            "type": "show",
+                            "video_path": file_url,
+                            "audio_path": data["audio_path"],
+                            "insert_index": data["insert_index"]
+                        }
+                    )
                 )
-            )
+            else:
+                await send_to_all_websockets(
+                    json.dumps(
+                        {
+                            "type": "show",
+                            "video_path": file_url,
+                            "audio_path": data["audio_path"],
+                            "captions_printer": data["captions_printer"],
+                            "insert_index": data["insert_index"]
+                        }
+                    )
+                )
 
             return CommonResult(code=200, message="操作成功")
         return CommonResult(code=200, message="视频合成失败")

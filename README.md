@@ -44,6 +44,7 @@ python：3.10.10
 | type         | string | 是       | 使用的视频合成技术类型(easy_wav2lip / sadtalker / genefaceplusplus / musetalk / local) |
 | video_path   | string | 是       | 视频文件的绝对路径（在local模式下必填）     |
 | audio_path   | string | 是       | 音频文件的绝对路径     |
+| captions_printer | string | 否   | 字幕打印机显示文本内容，不传则不发送     |
 | insert_index | int    | 是       | 插入索引值，队尾插入：-1，队首插入：0，其他自定义 |
 | move_file    | bool   | 否       | 是否移动合成或指定的视频文件到项目路径内。默认True |
 
@@ -119,6 +120,9 @@ python：3.10.10
 | msg    | string  | 响应消息，描述请求的处理结果 |
 
 # 更新日志
+
+- v0.3.0
+    - show接口 新增参数 captions_printer 控制字幕打印机显示文本内容，不传则不发送 
 
 - v0.2.3
     - 新增接口 get_video_queue，获取获取视频播放列表数据。

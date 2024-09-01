@@ -20,6 +20,8 @@ class GetVideoQueueResult(BaseModel):
     data: list
     message: str
     
+class SetConfigMessage(BaseModel):
+    captions_printer_api_url: Optional[str] = Field(None)
 
 """
 通用

@@ -16,7 +16,7 @@ from utils.config import Config
 from utils.common import Common
 from utils.logger import Configure_logger
 from utils.video_generate import run_get_video
-from utils.models import ShowMessage, GetNonDefaultVideoCountResult, GetVideoQueueResult, CommonResult
+from utils.models import ShowMessage, GetNonDefaultVideoCountResult, GetVideoQueueResult, CommonResult, SetConfigMessage
 
 # 获取 httpx 库的日志记录器
 httpx_logger = logging.getLogger("httpx")
@@ -253,6 +253,24 @@ async def get_video_queue():
         )
         await asyncio.sleep(0.5)
         return GetVideoQueueResult(code=200, data=video_queue, message="操作成功")
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        return CommonResult(code=-1, message=f"操作失败: {str(e)}")
+
+# 设置配置
+@app.post("/set_config")
+async def set_config(msg: SetConfigMessage):
+    try:
+        await send_to_all_websockets(
+            json.dumps(
+                {
+                    "type": "set_config",
+                    "data": msg.dict()
+                }
+            )
+        )
+        await asyncio.sleep(0.5)
+        return CommonResult(code=200, message="操作成功")
     except Exception as e:
         logging.error(traceback.format_exc())
         return CommonResult(code=-1, message=f"操作失败: {str(e)}")

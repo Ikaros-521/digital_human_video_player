@@ -118,6 +118,37 @@
         });
     }
 
+    function postData(url, data = {}) {
+        // 方法 1: 使用自定义的 replacer 函数
+        const jsonString = JSON.stringify(data, (key, value) => {
+            if (typeof value === 'string') {
+                return value.replace(/\n/g, '\\n');
+            }
+            return value;
+        });
+
+        // 方法 2: 手动替换换行符 (如果方法 1 不起作用，可以尝试这种方法)
+        // const jsonString = JSON.stringify(data).replace(/\\n/g, '\\n');
+
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: jsonString
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .catch(error => {
+            console.error('请求失败:', error);
+            throw error;
+        });
+    }
+
     /**
      * 切换视频
      */
@@ -131,7 +162,7 @@
             // 发送到字幕打印机
             if ("captions_printer" in data) {
                 // 根据实际字幕打印机的接口进行修改
-                getData(captions_printer_api_url, {"content": data.captions_printer, "start_delay": data.captions_printer_start_delay})
+                postData(captions_printer_api_url, data.captions_printer)
                     .then(data => {
                         console.log('成功:', data);
                     })

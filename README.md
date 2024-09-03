@@ -44,8 +44,7 @@ python：3.10.10
 | type         | string | 是       | 使用的视频合成技术类型(easy_wav2lip / sadtalker / genefaceplusplus / musetalk / local) |
 | video_path   | string | 是       | 视频文件的绝对路径（在local模式下必填）     |
 | audio_path   | string | 是       | 音频文件的绝对路径     |
-| captions_printer | string | 否   | 字幕打印机显示文本内容，不传则不发送     |
-| captions_printer_start_delay | int | 否   | 字幕打印机显示文本内容的延时显示时间，不传则不发送     |
+| captions_printer | dict | 否   | 字幕打印机相关参数，不传则不发送。content显示文本内容 start_delay显示文本内容的延时显示时间（毫秒） keep_time字幕保持时间（毫秒） 例如：{"content": "你好", "start_delay": 1000, "keep_time": 3000} |
 | insert_index | int    | 是       | 插入索引值，队尾插入：-1，队首插入：0，其他自定义 |
 | move_file    | bool   | 否       | 是否移动合成或指定的视频文件到项目路径内。默认True |
 
@@ -142,6 +141,8 @@ python：3.10.10
 | msg    | string  | 响应消息，描述请求的处理结果 |
 
 # 更新日志
+- v0.3.2
+    - show接口 captions_printer参数改为dict类型，直接传入相关的json数据，新增 keep_time键值，用于控制字幕显示时长（毫秒）
 - v0.3.1
     - 新增接口 set_config，用于设置相关配置，暂时仅提供前端 字幕打印机API地址设置功能
     - 页面自适应拉伸

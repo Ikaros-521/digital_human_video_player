@@ -141,6 +141,9 @@ python：3.10.10
 | msg    | string  | 响应消息，描述请求的处理结果 |
 
 # 更新日志
+- v0.3.3
+    - 后端允许跨域
+
 - v0.3.2
     - show接口 captions_printer参数改为dict类型，直接传入相关的json数据，新增 keep_time键值，用于控制字幕显示时长（毫秒）
 - v0.3.1

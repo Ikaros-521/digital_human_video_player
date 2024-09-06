@@ -11,6 +11,7 @@ import threading
 from selenium import webdriver
 from urllib.parse import unquote
 
+from fastapi.middleware.cors import CORSMiddleware
 
 from utils.config import Config
 from utils.common import Common
@@ -39,6 +40,15 @@ static_folder = os.path.abspath(static_folder)
 logging.info(f"static_folder={static_folder}")
 
 app = FastAPI()
+
+# 添加 CORS 中间件，允许所有跨域请求
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有来源
+    allow_credentials=True,  # 允许发送带有凭据的请求
+    allow_methods=["*"],  # 允许所有 HTTP 方法
+    allow_headers=["*"],  # 允许所有请求头
+)
 
 # Mount static folder
 app.mount("/static", StaticFiles(directory=static_folder), name="static")

@@ -8,7 +8,10 @@ class ShowMessage(BaseModel):
     captions_printer: Optional[dict] = Field(None)
     insert_index: int
     move_file: Optional[bool] = Field(None)
-    
+
+class DelVideoWithIndexMessage(BaseModel):
+    index: int
+
 class GetNonDefaultVideoCountResult(BaseModel):
     code: int
     message: str

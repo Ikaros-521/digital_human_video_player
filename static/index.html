@@ -219,6 +219,9 @@
             case 'get_video_queue':
                 getVideoQueue();
                 break;
+            case 'del_video_with_index':
+                delVideoWithIndex(data);
+                break;    
             case 'set_config':
                 set_config(data);
                 break;
@@ -285,6 +288,14 @@
     // 获取视频播放列表数据
     function getVideoQueue() {
         ws.send(JSON.stringify({ code: 200, type: "get_video_queue", data: videoQueue, message: '获取视频播放列表成功' }));
+        return videoQueue;
+    }
+
+    // 删除指定索引的视频数据
+    function delVideoWithIndex(data) {
+        let index = parseInt(data.index); // 将索引转换为整数
+        videoQueue.splice(index, 1);
+        ws.send(JSON.stringify({ code: 200, type: "del_video_with_index", data: videoQueue, message: '删除索引' + index + '的视频数据成功' }));
         return videoQueue;
     }
 

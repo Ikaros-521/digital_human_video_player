@@ -17,7 +17,7 @@ from utils.config import Config
 from utils.common import Common
 from utils.logger import Configure_logger
 from utils.video_generate import run_get_video
-from utils.models import ShowMessage, GetNonDefaultVideoCountResult, GetVideoQueueResult, CommonResult, SetConfigMessage
+from utils.models import ShowMessage, DelVideoWithIndexMessage, GetNonDefaultVideoCountResult, GetVideoQueueResult, CommonResult, SetConfigMessage
 
 # 获取 httpx 库的日志记录器
 httpx_logger = logging.getLogger("httpx")
@@ -102,6 +102,9 @@ async def websocket_endpoint(websocket: WebSocket):
                     logging.info(f"队列中非默认视频个数: {data_json['count']}")
                     non_default_video_count = data_json['count']
                 elif data_json['type'] == "get_video_queue":
+                    logging.debug(f"视频队列: {data_json['data']}")
+                    video_queue = data_json['data']
+                elif data_json['type'] == "del_video_with_index":
                     logging.debug(f"视频队列: {data_json['data']}")
                     video_queue = data_json['data']
             except WebSocketDisconnect:
@@ -254,6 +257,24 @@ async def get_video_queue():
             json.dumps(
                 {
                     "type": "get_video_queue"
+                }
+            )
+        )
+        await asyncio.sleep(0.5)
+        return GetVideoQueueResult(code=200, data=video_queue, message="操作成功")
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        return CommonResult(code=-1, message=f"操作失败: {str(e)}")
+
+# 删除指定索引的视频
+@app.post("/del_video_with_index")
+async def del_video_with_index(msg: DelVideoWithIndexMessage):
+    try:
+        await send_to_all_websockets(
+            json.dumps(
+                {
+                    "type": "del_video_with_index",
+                    "index": msg.index
                 }
             )
         )

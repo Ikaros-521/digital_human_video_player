@@ -187,7 +187,11 @@
             // 非默认视频情况下，删除掉已播放完的这个视频（此处在用户异常操作队列的情况下会有bug）
             if (videoQueue.length == 1 && !CurVideoisSameWithDefault()) {
                 videoQueue.shift();
-            }
+            } 
+            // 如果当前视频是默认视频，那说明是第一次插入，则需要进行播放
+            else if (videoQueue.length == 1 && CurVideoisSameWithDefault()) {
+                prepareNextVideo(videoQueue[0]);
+            } 
 
             if (!isWaitingForNextVideo) {
                 console.log('播放默认视频');

@@ -307,6 +307,9 @@ def start_browser(stop_event):
     # 设置为开发者模式，避免被浏览器识别为自动化程序
     options.add_experimental_option('excludeSwitches', ['enable-automation'])
     options.add_argument('--autoplay-policy=no-user-gesture-required')
+    # options.add_argument('--disable-gpu')  # 禁用GPU硬件加速
+    # options.add_argument('--disable-software-rasterizer')  # 禁用软件光栅化器
+    # options.add_argument('--no-sandbox')  # 禁用沙盒模式
     driver = webdriver.Chrome(options=options)
 
     # 火狐

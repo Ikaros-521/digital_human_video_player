@@ -178,11 +178,21 @@
 
     // 设置视频结束时的行为
     video1.onended = video2.onended = function() {
-        if (videoQueue.length > 0) {
-            prepareNextVideo(videoQueue.shift()); // 准备队列中的下一个视频
-        } else if (!isWaitingForNextVideo) {
-            console.log('播放默认视频');
-            prepareNextVideo({"video_path": defaultVideo}); // 没有等待的视频，播放默认视频
+        // 存在1个以上说明还有视频需要播放，否则就是没了，需要删除已经完成播放的视频
+        if (videoQueue.length > 1) {
+            // 非默认视频情况下，删除掉已播放完的这个视频（此处在用户异常操作队列的情况下会有bug）
+            if (!CurVideoisSameWithDefault()) videoQueue.shift();
+            prepareNextVideo(videoQueue[0]); // 准备队列中的下一个视频
+        } else {
+            // 非默认视频情况下，删除掉已播放完的这个视频（此处在用户异常操作队列的情况下会有bug）
+            if (videoQueue.length == 1 && !CurVideoisSameWithDefault()) {
+                videoQueue.shift();
+            }
+
+            if (!isWaitingForNextVideo) {
+                console.log('播放默认视频');
+                prepareNextVideo({"video_path": defaultVideo}); // 没有等待的视频，播放默认视频
+            }
         }
 
         if (!currentVideo.src.includes(defaultVideo.substring(1))) {
@@ -242,7 +252,8 @@
         }
 
         if (data.interrupt) { // 检查是否允许打断当前视频播放
-            prepareNextVideo(videoQueue.shift()); // 如果允许打断，则立即准备下一个视频
+            if (!CurVideoisSameWithDefault()) videoQueue.shift(); // 从队列中移除第一个视频
+            prepareNextVideo(videoQueue[0]); // 如果允许打断，则立即准备下一个视频
         }
 
         let nonDefaultVideoCount = getNonDefaultVideoCount();
